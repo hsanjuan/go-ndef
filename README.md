@@ -20,7 +20,7 @@ import (
 
 `ndef.Message` and `ndef.Record` implement methods `.ParseBytes(bytes []byte) error` and `.Bytes() ([]byte, error)`. `ParseBytes()` takes a byte slice and parses it into the Type struct fields. `Bytes()` does the opposite and returns a byte slice produced from the NDEF Message or Record. In both cases, if the bytes parsed or the given type is not following the NDEF Standard, errors are returned.
 
-Some example are below:
+Some examples are below:
 
 ### Parsing an NDEF Message from a byte slice
 
