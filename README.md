@@ -1,6 +1,8 @@
 ndef
 ====
 
+[![Build Status](https://travis-ci.org/hsanjuan/ndef.svg?branch=master)](https://travis-ci.org/hsanjuan/ndef)
+
 A Go implementation of the NFC Data Exchange Format (NDEF).
 
 `ndef` allows to easily work with NDEF Messages in Go, providing an easy way to parse bytes and generate bytes, ensuring the NDEF standard is followed.
