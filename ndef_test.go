@@ -17,14 +17,13 @@
 
 package ndef
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestURIProtocols(t *testing.T) {
 	for i := 0; i <= 36; i++ {
-		r := URIProtocols(byte(i))
-		t.Logf("URIProtocols(%d) -> %s", i, r)
-		if r == "RFU" && i != 36 {
-			t.Errorf("Error: URIProtocols(%d) -> %s", i, r)
-		}
+		r := URIProtocols[byte(i)]
+		t.Logf("URIProtocols[%d] -> %s", i, r)
 	}
 }

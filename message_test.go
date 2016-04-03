@@ -19,8 +19,39 @@ package ndef
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
+
+func ExampleMessage() {
+	// Here we create a Message of type "U" (URI).
+	// Note that the first byte of the payload is dedicated to encode the
+	// URI Protocol
+	ndefMessage := &Message{
+		TNF:     NFCForumWellKnownType,
+		Type:    []byte("U"),
+		Payload: []byte("\x04github.com/hsanjuan/ndef"),
+	}
+	fmt.Println(ndefMessage)
+	// Output:
+	// urn:nfc:wkt:U:https://github.com/hsanjuan/ndef
+}
+
+func ExampleMessage_ParseBytes() {
+	ndefMessageBytes := []byte{0xd1, 0x01, 0x20, 0x54, 0x54, 0x68, 0x69,
+		0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x6d, 0x65, 0x73,
+		0x73, 0x61, 0x67, 0x65, 0x20, 0x6f, 0x66, 0x20, 0x54, 0x5b,
+		0x65, 0x78, 0x74, 0x5d, 0x20, 0x74, 0x79, 0x70, 0x65}
+	ndefMessage := &Message{}                          // Create uninitialized message
+	_, err := ndefMessage.ParseBytes(ndefMessageBytes) // Parse bytes into it
+	if err != nil {                                    // Your bytes don't look good
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(ndefMessage) // Print some about the message
+	// Output:
+	// urn:nfc:wkt:T:This is a message of T[ext] type
+}
 
 func TestMessageBytesAndParsing(t *testing.T) {
 	t.Log("Testing a Message created with a provided NDEF Record")
@@ -30,7 +61,7 @@ func TestMessageBytesAndParsing(t *testing.T) {
 		CF:            false,
 		SR:            true,
 		IL:            true,
-		TNF:           UNKNOWN,
+		TNF:           Unknown,
 		TypeLength:    4,
 		IDLength:      3,
 		PayloadLength: [4]byte{3, 0, 0, 0},
@@ -41,46 +72,49 @@ func TestMessageBytesAndParsing(t *testing.T) {
 
 	m := new(Message)
 	m.SetRecords([]*Record{r})
-	m_bytes, err := m.Bytes()
+	mBytes, err := m.Bytes()
 	if err != nil {
 		t.Error(err)
 	}
 	m2 := new(Message)
-	_, err = m2.ParseBytes(m_bytes)
+	_, err = m2.ParseBytes(mBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	m2_bytes, err := m2.Bytes()
+	m2Bytes, err := m2.Bytes()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("M1:", FmtBytes(m_bytes, len(m_bytes)))
-	t.Log("M2:", FmtBytes(m2_bytes, len(m2_bytes)))
-	if !bytes.Equal(m_bytes, m2_bytes) {
+	t.Log("M1:", FmtBytes(mBytes, len(mBytes)))
+	t.Log("M2:", FmtBytes(m2Bytes, len(m2Bytes)))
+	if !bytes.Equal(mBytes, m2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Message")
 	}
 
 	t.Log("Testing with a Message created by defining its fields")
 	m = &Message{
-		TNF:     UNKNOWN,
+		TNF:     Unknown,
 		ID:      []byte{1, 2, 3},
 		Type:    []byte("test"),
 		Payload: []byte("abc"),
 	}
-	m_bytes, _ = m.Bytes()
+	mBytes, _ = m.Bytes()
 	m2 = new(Message)
-	_, err = m2.ParseBytes(m_bytes)
+	_, err = m2.ParseBytes(mBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	m2_bytes, err = m2.Bytes()
+	m2Bytes, err = m2.Bytes()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("M1:", FmtBytes(m_bytes, len(m_bytes)))
-	t.Log("M2:", FmtBytes(m2_bytes, len(m2_bytes)))
-	if !bytes.Equal(m_bytes, m2_bytes) {
+	t.Log("M1:", FmtBytes(mBytes, len(mBytes)))
+	t.Log("M2:", FmtBytes(m2Bytes, len(m2Bytes)))
+	if !bytes.Equal(mBytes, m2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Message")
+	}
+	if m2.TNF != m.TNF {
+		t.Error("The TNF was not correctly maintained")
 	}
 }
 
@@ -88,7 +122,7 @@ func TestMessageString(t *testing.T) {
 	// Just test we are not crashing
 
 	m := &Message{
-		TNF:     NFC_FORUM_WELL_KNOWN_TYPE,
+		TNF:     NFCForumWellKnownType,
 		ID:      []byte{1, 2, 3},
 		Type:    []byte("T"),
 		Payload: []byte("abc"),
@@ -96,7 +130,7 @@ func TestMessageString(t *testing.T) {
 	t.Log(m)
 
 	m = &Message{
-		TNF:     NFC_FORUM_WELL_KNOWN_TYPE,
+		TNF:     NFCForumWellKnownType,
 		ID:      []byte{1, 2, 3},
 		Type:    []byte("U"),
 		Payload: []byte("\x03abc"),
@@ -104,7 +138,7 @@ func TestMessageString(t *testing.T) {
 	t.Log(m)
 
 	m = &Message{
-		TNF:     NFC_FORUM_WELL_KNOWN_TYPE,
+		TNF:     NFCForumWellKnownType,
 		ID:      []byte{1, 2, 3},
 		Type:    []byte("X"),
 		Payload: []byte("abc"),
@@ -112,19 +146,19 @@ func TestMessageString(t *testing.T) {
 	t.Log(m)
 
 	m = &Message{
-		TNF: EMPTY,
+		TNF: Empty,
 	}
 	t.Log(m)
 
 	m = &Message{
-		TNF:     MEDIA_TYPE,
+		TNF:     MediaType,
 		Type:    []byte("image/jpeg"),
 		Payload: []byte("abc"),
 	}
 	t.Log(m)
 
 	m = &Message{
-		TNF: ABSOLUTE_URI,
+		TNF: AbsoluteURI,
 		ID:  []byte{1, 2, 3},
 		//Type:    []byte("T"),
 		Payload: []byte("http://abc.de"),
@@ -132,7 +166,7 @@ func TestMessageString(t *testing.T) {
 	t.Log(m)
 
 	m = &Message{
-		TNF:     NFC_FORUM_EXTERNAL_TYPE,
+		TNF:     NFCForumExternalType,
 		ID:      []byte{1, 2, 3},
 		Type:    []byte("T"),
 		Payload: []byte("abc"),
@@ -140,7 +174,7 @@ func TestMessageString(t *testing.T) {
 	t.Log(m)
 
 	m = &Message{
-		TNF:     UNKNOWN,
+		TNF:     Unknown,
 		ID:      []byte{1, 2, 3},
 		Type:    []byte("T"),
 		Payload: []byte("abc"),
@@ -148,7 +182,7 @@ func TestMessageString(t *testing.T) {
 	t.Log(m)
 
 	m = &Message{
-		TNF:     UNCHANGED,
+		TNF:     Unchanged,
 		ID:      []byte{1, 2, 3},
 		Type:    []byte("T"),
 		Payload: []byte("abc"),
@@ -156,7 +190,7 @@ func TestMessageString(t *testing.T) {
 	t.Log(m)
 
 	m = &Message{
-		TNF:     RESERVED,
+		TNF:     Reserved,
 		ID:      []byte{1, 2, 3},
 		Type:    []byte("T"),
 		Payload: []byte("abc"),
@@ -166,15 +200,15 @@ func TestMessageString(t *testing.T) {
 
 func TestNDEFBadMessageTest(t *testing.T) {
 	cases := []struct{ Expected string }{
-		{ERROR_NO_RECORDS},
-		{ERROR_NO_MB},
-		{ERROR_FIRST_CHUNKED},
-		{ERROR_NO_ME},
-		{ERROR_LAST_CHUNKED},
-		{ERROR_CF_MISSING},
-		{ERROR_BAD_IL},
-		{ERROR_BAD_TYPELENGTH},
-		{ERROR_BAD_TNF},
+		{ENORECORDS},
+		{ENOMB},
+		{EFIRSTCHUNKED},
+		{ENOME},
+		{ELASTCHUNKED},
+		{ECFMISSING},
+		{EBADIL},
+		{EBADTYPELENGTH},
+		{EBADTNF},
 	}
 
 	errs := []error{}
@@ -296,14 +330,14 @@ func TestNDEFBadMessageTest(t *testing.T) {
 			CF:         true,
 			TypeLength: 1,
 			Type:       []byte("U"),
-			TNF:        EMPTY,
+			TNF:        Empty,
 		},
 		&Record{
 			MB:         false,
 			ME:         true,
 			CF:         false,
 			TypeLength: 0,
-			TNF:        UNKNOWN,
+			TNF:        Unknown,
 		},
 	}
 	m.records = rs
@@ -330,6 +364,7 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 			ME:            false,
 			CF:            true,
 			SR:            true,
+			TNF:           NFCForumWellKnownType,
 			TypeLength:    1,
 			Type:          []byte("U"),
 			PayloadLength: [4]byte{1, 0, 0, 0},
@@ -341,7 +376,7 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 			CF:            true,
 			SR:            true,
 			TypeLength:    0,
-			TNF:           UNCHANGED,
+			TNF:           Unchanged,
 			PayloadLength: [4]byte{2, 0, 0, 0},
 			Payload:       []byte("bc"),
 		},
@@ -351,7 +386,7 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 			CF:            false,
 			SR:            true,
 			TypeLength:    0,
-			TNF:           UNCHANGED,
+			TNF:           Unchanged,
 			PayloadLength: [4]byte{1, 0, 0, 0},
 			Payload:       []byte("d"),
 		},
@@ -363,12 +398,12 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 	}
 
 	// Since we are here, test that we can reparse correctly
-	m_bytes, err := m.Bytes()
+	mBytes, err := m.Bytes()
 	if err != nil {
 		t.Error(err)
 	}
 	m2 := &Message{}
-	m2.ParseBytes(m_bytes)
+	m2.ParseBytes(mBytes)
 	if string(m2.Payload) != "abcd" {
 		t.Error("Payload is not what we would expect!")
 	}

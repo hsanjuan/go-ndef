@@ -15,108 +15,62 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+// Package ndef provides an implementation of the NFC Data Exchange
+// Format (NDEF) specification.
+//
+// It allows to parse byte slices into a structured Message type,
+// as well as to turn an Message into a byte slice.
 package ndef
 
-/*
-
-This is an implementation of the NFC Data Exchange Format (NDEF) standard.
-
-It allows to parse byte slices into a structured Message type,
-as well as to turn an Message into a byte slice.
-
-See ndef_message.go and ndef_record.go for details.
-
-*/
-
-// Possible values for the TNF Field
+// Possible values for the TNF Field as defined in the specification.
 const (
-	EMPTY = byte(iota)
-	NFC_FORUM_WELL_KNOWN_TYPE
-	MEDIA_TYPE
-	ABSOLUTE_URI
-	NFC_FORUM_EXTERNAL_TYPE
-	UNKNOWN
-	UNCHANGED
-	RESERVED
+	Empty = byte(iota)
+	NFCForumWellKnownType
+	MediaType
+	AbsoluteURI
+	NFCForumExternalType
+	Unknown
+	Unchanged
+	Reserved
 )
 
-// Given an URI identifier code (the first byte of a NDEF Payload of type 'U'), return the meaning
-func URIProtocols(uri_identifier_code byte) string {
-	switch uri_identifier_code {
-	case 0:
-		return ""
-	case 1:
-		return "http://www."
-	case 2:
-		return "https://www."
-	case 3:
-		return "http://"
-	case 4:
-		return "https://"
-	case 5:
-		return "tel:"
-	case 6:
-		return "mailto:"
-	case 7:
-		return "ftp://anonymous:anonymous@"
-	case 8:
-		return "ftp://ftp."
-	case 9:
-		return "ftps://"
-	case 10:
-		return "sftp://"
-	case 11:
-		return "smb://"
-	case 12:
-		return "nfs://"
-	case 13:
-		return "ftp://"
-	case 14:
-		return "dev://"
-	case 15:
-		return "news:"
-	case 16:
-		return "telnet://"
-	case 17:
-		return "imap:"
-	case 18:
-		return "rtsp://"
-	case 19:
-		return "urn:"
-	case 20:
-		return "pop:"
-	case 21:
-		return "sip:"
-	case 22:
-		return "sips:"
-	case 23:
-		return "tftp:"
-	case 24:
-		return "btspp://"
-	case 25:
-		return "btl2cap://"
-	case 26:
-		return "btgoep://"
-	case 27:
-		return "tcpobex://"
-	case 28:
-		return "irdaobex://"
-	case 29:
-		return "file://"
-	case 30:
-		return "urn:epc:id:"
-	case 31:
-		return "urn:epc:tag:"
-	case 32:
-		return "urn:epc:pat:"
-	case 33:
-		return "urn:epc:raw:"
-	case 34:
-		return "urn:epc:"
-	case 35:
-		return "urn:nfc:"
-	default:
-		return "RFU"
-	}
-
+// URIProtocols provides a mapping between the first byte if a NDEF Payload of
+// type "U" (URI) and the string value for the protocol
+var URIProtocols = map[byte]string{
+	0:  "",
+	1:  "http://www.",
+	2:  "https://www.",
+	3:  "http://",
+	4:  "https://",
+	5:  "tel:",
+	6:  "mailto:",
+	7:  "ftp://anonymous:anonymous@",
+	8:  "ftp://ftp.",
+	9:  "ftps://",
+	10: "sftp://",
+	11: "smb://",
+	12: "nfs://",
+	13: "ftp://",
+	14: "dev://",
+	15: "news:",
+	16: "telnet://",
+	17: "imap:",
+	18: "rtsp://",
+	19: "urn:",
+	20: "pop:",
+	21: "sip:",
+	22: "sips:",
+	23: "tftp:",
+	24: "btspp://",
+	25: "btl2cap://",
+	26: "btgoep://",
+	27: "tcpobex://",
+	28: "irdaobex://",
+	29: "file://",
+	30: "urn:epc:id:",
+	31: "urn:epc:tag:",
+	32: "urn:epc:pat:",
+	33: "urn:epc:raw:",
+	34: "urn:epc:",
+	35: "urn:nfc:",
 }

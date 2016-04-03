@@ -23,29 +23,33 @@ import (
 	"fmt"
 )
 
-// Parse some bytes into an uint64. If the slice is longer that 8 bytes, it's truncated.
+// BytesToUint64 parses a byte slice to an uint64 (BigEndian). If the slice
+// is longer than 8 bytes, it's truncated. If it's shorter, they are considered
+// the less significant bits of the uint64.
 func BytesToUint64(b []byte) uint64 {
 	// Make sure we are not parsing more than 8 bytes (uint64 size)
 	byte8 := make([]byte, 8)
 	if len(b) > 8 {
 		copy(byte8, b[len(b)-8:]) // use the last 8 bytes
 	} else {
-		copy(byte8[8-len(b):], b) // copy shorter arrays in the last positions of byte8
+		copy(byte8[8-len(b):], b) // copy to last positions of byte8
 	}
 	return binary.BigEndian.Uint64(byte8)
 }
 
-// Given an Uint64, return a slice of bytes.
-func Uint64ToBytes(n uint64, desired_len int) []byte {
+// Uint64ToBytes converts a BigEndian uint64 into a byte slice of
+// desiredLen. For lengths under 8 bytes, the 8 byte result is
+// truncated (the most significant bytes are discarded
+func Uint64ToBytes(n uint64, desiredLen int) []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, n)
-	if desired_len >= 8 {
-		slice := make([]byte, desired_len)
-		copy(slice[desired_len-8:], buf.Bytes())
+	if desiredLen >= 8 {
+		slice := make([]byte, desiredLen)
+		copy(slice[desiredLen-8:], buf.Bytes())
 		return slice
-	} else {
-		return buf.Bytes()[8-desired_len:]
 	}
+
+	return buf.Bytes()[8-desiredLen:]
 }
 
 // func PrintBytes(bytes []byte, length int) {
@@ -55,8 +59,13 @@ func Uint64ToBytes(n uint64, desired_len int) []byte {
 // 	fmt.Println()
 // }
 
-func FmtBytes(bytes []byte, length int) (str string) {
-	for i := 0; i < length; i++ {
+// FmtBytes receives a byte slice and a n value and returns
+// a string with first n hex-formatted values of the slice
+func FmtBytes(bytes []byte, n int) (str string) {
+	if n > len(bytes) {
+		n = len(bytes)
+	}
+	for i := 0; i < n; i++ {
 		str += fmt.Sprintf("%02x ", bytes[i])
 	}
 	return str

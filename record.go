@@ -23,6 +23,11 @@ import (
 	//	"errors"
 )
 
+// Record represents a NDEF Record, which is part of an NDEF Message.
+// Records follow some strict rules when they go together in a Message
+// (see the Message TestRecords()). Records can have two forms:
+// a ShortRecord (SR) only uses 1 byte for the Payload Length, but a regular
+// record uses 4 bytes instead.
 type Record struct {
 	// First byte
 	MB            bool    // Message begin
@@ -63,37 +68,39 @@ func (r *Record) String() string {
 	return str
 }
 
-// Parse a byte slice into a Record struct. The byte slice should start
-// with the NDEF record even though it could contain more records after it.
+// BUG(hector): ParseBytes() will panic badly if there are not enough bytes
+// in the slice
+
+// ParseBytes parses a byte slice into a single Record struct (the slice can
+// have extra bytes which are ignored).
 //
 // Returns how many bytes were parsed from the slice (record length) or
 // an error if something went wrong.
-// FIXME: It will panic badly if there are not enough bytes to read.
 func (r *Record) ParseBytes(bytes []byte) (int, error) {
 	i := 0
-	first_byte := bytes[i]
-	r.MB = (first_byte >> 7 & 0x1) == 1
-	r.ME = (first_byte >> 6 & 0x1) == 1
-	r.CF = (first_byte >> 5 & 0x1) == 1
-	r.SR = (first_byte >> 4 & 0x1) == 1
-	r.IL = (first_byte >> 3 & 0x1) == 1
-	r.TNF = first_byte & 0x7
+	firstByte := bytes[i]
+	r.MB = (firstByte >> 7 & 0x1) == 1
+	r.ME = (firstByte >> 6 & 0x1) == 1
+	r.CF = (firstByte >> 5 & 0x1) == 1
+	r.SR = (firstByte >> 4 & 0x1) == 1
+	r.IL = (firstByte >> 3 & 0x1) == 1
+	r.TNF = firstByte & 0x7
 	i++
 
 	r.TypeLength = bytes[i]
 	i++
 
-	var pl_length int
+	var payloadLen int
 	if r.SR { //This is a short record
 		r.PayloadLength[0] = bytes[i]
 		i++
-		pl_length = int(r.PayloadLength[0])
+		payloadLen = int(r.PayloadLength[0])
 	} else { // Regular record
 		var pl [4]byte
 		copy(pl[:], bytes[i:i+4])
 		r.PayloadLength = pl
 		i += 4
-		pl_length = int(BytesToUint64(r.PayloadLength[:]))
+		payloadLen = int(BytesToUint64(r.PayloadLength[:]))
 	}
 	if r.IL {
 		r.IDLength = bytes[i]
@@ -105,33 +112,34 @@ func (r *Record) ParseBytes(bytes []byte) (int, error) {
 		r.ID = bytes[i : i+int(r.IDLength)]
 		i += int(r.IDLength)
 	}
-	r.Payload = bytes[i : i+pl_length]
-	i += pl_length
+	r.Payload = bytes[i : i+payloadLen]
+	i += payloadLen
 	// Return the records length
 	return i, nil
 }
 
-// Returns the byte representation of the Record
+// Bytes returns the byte representation of a Record, or an error
+// if something went wrong
 func (r *Record) Bytes() ([]byte, error) {
 	var buffer bytes.Buffer
-	first_byte := byte(0)
+	firstByte := byte(0)
 	if r.MB {
-		first_byte |= 0x1 << 7
+		firstByte |= 0x1 << 7
 	}
 	if r.ME {
-		first_byte |= 0x1 << 6
+		firstByte |= 0x1 << 6
 	}
 	if r.CF {
-		first_byte |= 0x1 << 5
+		firstByte |= 0x1 << 5
 	}
 	if r.SR {
-		first_byte |= 0x1 << 4
+		firstByte |= 0x1 << 4
 	}
 	if r.IL {
-		first_byte |= 0x1 << 3
+		firstByte |= 0x1 << 3
 	}
-	first_byte |= (r.TNF & 0x7) //Last 3 bits are from TNF
-	buffer.WriteByte(first_byte)
+	firstByte |= (r.TNF & 0x7) //Last 3 bits are from TNF
+	buffer.WriteByte(firstByte)
 	// TypeLength byte
 	buffer.WriteByte(r.TypeLength)
 

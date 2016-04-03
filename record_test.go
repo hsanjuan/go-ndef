@@ -30,7 +30,7 @@ func TestRecordBytesAndParsing(t *testing.T) {
 		CF:            false,
 		SR:            true,
 		IL:            true,
-		TNF:           UNKNOWN,
+		TNF:           Unknown,
 		TypeLength:    4,
 		IDLength:      3,
 		PayloadLength: [4]byte{3, 0, 0, 0},
@@ -39,22 +39,22 @@ func TestRecordBytesAndParsing(t *testing.T) {
 		Payload:       []byte("abc"),
 	}
 
-	r_bytes, err := r.Bytes()
+	rBytes, err := r.Bytes()
 	if err != nil {
 		t.Error(err)
 	}
 	r2 := new(Record)
-	_, err = r2.ParseBytes(r_bytes)
+	_, err = r2.ParseBytes(rBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	r2_bytes, err := r2.Bytes()
+	r2Bytes, err := r2.Bytes()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("R1:", FmtBytes(r_bytes, len(r_bytes)))
-	t.Log("R2:", FmtBytes(r2_bytes, len(r2_bytes)))
-	if !bytes.Equal(r_bytes, r2_bytes) {
+	t.Log("R1:", FmtBytes(rBytes, len(rBytes)))
+	t.Log("R2:", FmtBytes(r2Bytes, len(r2Bytes)))
+	if !bytes.Equal(rBytes, r2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Record")
 	}
 
@@ -66,7 +66,7 @@ func TestRecordBytesAndParsing(t *testing.T) {
 		CF:            false,
 		SR:            false,
 		IL:            false,
-		TNF:           UNKNOWN,
+		TNF:           Unknown,
 		TypeLength:    4,
 		IDLength:      3,
 		PayloadLength: [4]byte{0, 0, 0, 3},
@@ -75,22 +75,22 @@ func TestRecordBytesAndParsing(t *testing.T) {
 		Payload:       []byte("abc"),
 	}
 
-	r_bytes, err = r.Bytes()
+	rBytes, err = r.Bytes()
 	if err != nil {
 		t.Error(err)
 	}
 	r2 = new(Record)
-	_, err = r2.ParseBytes(r_bytes)
+	_, err = r2.ParseBytes(rBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	r2_bytes, err = r2.Bytes()
+	r2Bytes, err = r2.Bytes()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("R1:", FmtBytes(r_bytes, len(r_bytes)))
-	t.Log("R2:", FmtBytes(r2_bytes, len(r2_bytes)))
-	if !bytes.Equal(r_bytes, r2_bytes) {
+	t.Log("R1:", FmtBytes(rBytes, len(rBytes)))
+	t.Log("R2:", FmtBytes(r2Bytes, len(r2Bytes)))
+	if !bytes.Equal(rBytes, r2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Record")
 	}
 }
@@ -102,7 +102,7 @@ func TestRecordString(t *testing.T) {
 		CF:            false,
 		SR:            false,
 		IL:            false,
-		TNF:           UNKNOWN,
+		TNF:           Unknown,
 		TypeLength:    4,
 		IDLength:      3,
 		PayloadLength: [4]byte{0, 0, 0, 3},
