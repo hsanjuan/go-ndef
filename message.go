@@ -55,7 +55,7 @@ func (m *Message) String() string {
 		case "T": // Plain text
 			str += fmt.Sprintln(string(m.Payload))
 		case "U": // URI
-			str += fmt.Sprintf("%s%s\n",
+			str += fmt.Sprintf("%s%s",
 				URIProtocols[m.Payload[0]],
 				string(m.Payload[1:]))
 		default:
