@@ -56,7 +56,7 @@ func (m *Message) String() string {
 			str += fmt.Sprintln(string(m.Payload))
 		case "U": // URI
 			str += fmt.Sprintf("%s%s\n",
-				URIProtocols(m.Payload[0]),
+				URIProtocols[m.Payload[0]],
 				string(m.Payload[1:]))
 		default:
 			str += fmt.Sprintln("Payload is a NFC Forum Well" +
@@ -161,6 +161,7 @@ func (m *Message) Bytes() ([]byte, error) {
 	tempRecord.Type = m.Type
 	tempRecord.IDLength = byte(len(m.ID))
 	tempRecord.ID = m.ID
+	tempRecord.TNF = m.TNF
 	payloadLen := len(m.Payload)
 	if payloadLen > 4294967295 { //2^32-1. 4GB message max.
 		payloadLen = 2 ^ 32 - 1

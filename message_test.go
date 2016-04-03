@@ -19,8 +19,39 @@ package ndef
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
+
+func ExampleMessage() {
+	// Here we create a Message of type "U" (URI).
+	// Note that the first byte of the payload is dedicated to encode the
+	// URI Protocol
+	ndefMessage := &Message{
+		TNF:     NFCForumWellKnownType,
+		Type:    []byte("U"),
+		Payload: []byte("\x04github.com/hsanjuan/ndef"),
+	}
+	fmt.Println(ndefMessage)
+	// Output:
+	// urn:nfc:wkt:U:https://github.com/hsanjuan/ndef
+}
+
+func ExampleMessage_ParseBytes() {
+	ndefMessageBytes := []byte{0xd1, 0x01, 0x20, 0x54, 0x54, 0x68, 0x69,
+		0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x6d, 0x65, 0x73,
+		0x73, 0x61, 0x67, 0x65, 0x20, 0x6f, 0x66, 0x20, 0x54, 0x5b,
+		0x65, 0x78, 0x74, 0x5d, 0x20, 0x74, 0x79, 0x70, 0x65}
+	ndefMessage := &Message{}                          // Create uninitialized message
+	_, err := ndefMessage.ParseBytes(ndefMessageBytes) // Parse bytes into it
+	if err != nil {                                    // Your bytes don't look good
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(ndefMessage) // Print some about the message
+	// Output:
+	// urn:nfc:wkt:T:This is a message of T[ext] type
+}
 
 func TestMessageBytesAndParsing(t *testing.T) {
 	t.Log("Testing a Message created with a provided NDEF Record")
@@ -81,6 +112,9 @@ func TestMessageBytesAndParsing(t *testing.T) {
 	t.Log("M2:", FmtBytes(m2Bytes, len(m2Bytes)))
 	if !bytes.Equal(mBytes, m2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Message")
+	}
+	if m2.TNF != m.TNF {
+		t.Error("The TNF was not correctly maintained")
 	}
 }
 
