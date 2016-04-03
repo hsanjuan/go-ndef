@@ -15,34 +15,28 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+// An implementation of the NFC Data Exchange Format (NDEF) specification.
+//
+// It allows to parse byte slices into a structured $Message type,
+// as well as to turn an Message into a byte slice.
 package ndef
 
-/*
-
-This is an implementation of the NFC Data Exchange Format (NDEF) standard.
-
-It allows to parse byte slices into a structured Message type,
-as well as to turn an Message into a byte slice.
-
-See ndef_message.go and ndef_record.go for details.
-
-*/
-
-// Possible values for the TNF Field
+// Possible values for the TNF Field as defined in the specification.
 const (
-	EMPTY = byte(iota)
-	NFC_FORUM_WELL_KNOWN_TYPE
-	MEDIA_TYPE
-	ABSOLUTE_URI
-	NFC_FORUM_EXTERNAL_TYPE
-	UNKNOWN
-	UNCHANGED
-	RESERVED
+	Empty = byte(iota)
+	NFCForumWellKnownType
+	MediaType
+	AbsoluteURI
+	NFCForumExternalType
+	Unknown
+	Unchanged
+	Reserved
 )
 
-// Given an URI identifier code (the first byte of a NDEF Payload of type 'U'), return the meaning
-func URIProtocols(uri_identifier_code byte) string {
-	switch uri_identifier_code {
+// URIProtocols returns the string representation of a given an URI identifier
+// code (the first byte of a NDEF Payload of type 'U')
+func URIProtocols(uriCode byte) string {
+	switch uriCode {
 	case 0:
 		return ""
 	case 1:
@@ -118,5 +112,4 @@ func URIProtocols(uri_identifier_code byte) string {
 	default:
 		return "RFU"
 	}
-
 }

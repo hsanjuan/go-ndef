@@ -5,7 +5,7 @@ ndef
 
 A Go implementation of the NFC Data Exchange Format (NDEF).
 
-`ndef` allows to easily work with NDEF Messages in Go, providing an easy way to parse bytes and generate bytes, ensuring the NDEF standard is followed.
+`ndef` allows to easily work with NDEF Messages in Go, providing an easy way to parse bytes and generate bytes, ensuring the NDEF specification is followed.
 
 Usage
 -----
@@ -18,7 +18,7 @@ import (
 
 `ndef` provides a `ndef.Message` type which can be used to create or parse NDEF Messages. A NDEF Message is formed by NDEF Records. A `ndef.Record` type is also available, allowing to produce NDEF Messages by providing their NDEF Records directly (to produce a chunked NDEF message bytestream for example).
 
-`ndef.Message` and `ndef.Record` implement methods `.ParseBytes(bytes []byte) error` and `.Bytes() ([]byte, error)`. `ParseBytes()` takes a byte slice and parses it into the Type struct fields. `Bytes()` does the opposite and returns a byte slice produced from the NDEF Message or Record. In both cases, if the bytes parsed or the given type is not following the NDEF Standard, errors are returned.
+`ndef.Message` and `ndef.Record` implement methods `.ParseBytes(bytes []byte) error` and `.Bytes() ([]byte, error)`. `ParseBytes()` takes a byte slice and parses it into the Type struct fields. `Bytes()` does the opposite and returns a byte slice produced from the NDEF Message or Record. In both cases, if the bytes parsed or the given type is not following the NDEF specification, errors are returned.
 
 Some examples are below:
 
