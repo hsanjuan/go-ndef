@@ -1,7 +1,9 @@
 ndef
 ====
 
-[![Build Status](https://travis-ci.org/hsanjuan/ndef.svg?branch=master)](https://travis-ci.org/hsanjuan/ndef) [![Coverage Status](https://coveralls.io/repos/github/hsanjuan/ndef/badge.svg?branch=master)](https://coveralls.io/github/hsanjuan/ndef?branch=master)
+Master/stable: [![Build Status](https://travis-ci.org/hsanjuan/ndef.svg?branch=master)](https://travis-ci.org/hsanjuan/ndef) [![Coverage Status](https://coveralls.io/repos/github/hsanjuan/ndef/badge.svg?branch=master)](https://coveralls.io/github/hsanjuan/ndef?branch=master)
+
+Unstable: [![Build Status](https://travis-ci.org/hsanjuan/ndef.svg?branch=unstable)](https://travis-ci.org/hsanjuan/ndef) [![Coverage Status](https://coveralls.io/repos/github/hsanjuan/ndef/badge.svg?branch=unstable)](https://coveralls.io/github/hsanjuan/ndef?branch=unstable)
 
 A Go implementation of the NFC Data Exchange Format (NDEF).
 
