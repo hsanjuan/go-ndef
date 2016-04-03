@@ -55,7 +55,7 @@ func (m *Message) String() string {
 		case "T": // Plain text
 			str += fmt.Sprintln(string(m.Payload))
 		case "U": // URI
-			str += fmt.Sprintf("%s%s\n",
+			str += fmt.Sprintf("%s%s",
 				URIProtocols[m.Payload[0]],
 				string(m.Payload[1:]))
 		default:
@@ -185,15 +185,15 @@ func (m *Message) Bytes() ([]byte, error) {
 
 // Set some short-hands for the errors that can happen on TestRecords().
 const (
-	ENORECORDS     = "No records"
-	ENOMB          = "First record has not the MessageBegin flag set"
-	EFIRSTCHUNKED  = "A single record cannot have the Chunk flag set"
-	ENOME          = "Last record has not the MessageEnd flag set"
-	ELASTCHUNKED   = "Last record cannot have the Chunk flag set"
-	ECFMISSING     = "Chunk Flag missing from some records"
-	EBADIL         = "IL flag is set on a middle or final chunk"
-	EBADTYPELENGTH = "A middle or last chunk has TypeLength != 0"
-	EBADTNF        = "A middle or last chunk TNF is not UNCHANGED"
+	ENORECORDS     = "Message.TestRecords: No records"
+	ENOMB          = "Message.TestRecords: First record has not the MessageBegin flag set"
+	EFIRSTCHUNKED  = "Message.TestRecords: A single record cannot have the Chunk flag set"
+	ENOME          = "Message.TestRecords: Last record has not the MessageEnd flag set"
+	ELASTCHUNKED   = "Message.TestRecords: Last record cannot have the Chunk flag set"
+	ECFMISSING     = "Message.TestRecords: Chunk Flag missing from some records"
+	EBADIL         = "Message.TestRecords: IL flag is set on a middle or final chunk"
+	EBADTYPELENGTH = "Message.TestRecords: A middle or last chunk has TypeLength != 0"
+	EBADTNF        = "Message.TestRecords: A middle or last chunk TNF is not UNCHANGED"
 )
 
 // TestRecords performs checks which are inspired in the "2.5 NDEF Mechanisms
