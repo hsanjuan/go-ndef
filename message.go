@@ -42,6 +42,14 @@ type Message struct {
 	Payload []byte // Message payload
 }
 
+// Reset clears the fields of a Message and puts them to their default values
+func (m *Message) Reset() {
+	m.records = []*Record{}
+	m.TNF = 0
+	m.ID = []byte{}
+	m.Payload = []byte{}
+}
+
 // Return a string with some information about the message, and if it's easy
 // enough to be placed in a string, the payload.
 func (m *Message) String() string {
@@ -80,18 +88,19 @@ func (m *Message) String() string {
 	return str
 }
 
-// ParseBytes parses s a byte slice into a Message. It will parse
+// Unmarshal parses a byte slice into a Message. It will parse
 // each record until and including the  Message End Record. Then
 // it will assemble the Payload and set the TNF, Type, ID fields with
-// the correct information.
+// the correct information. The message is always reset before parsing.
 //
 // Returns the number of bytes processed (message length), or an error
 // if something looks wrong with the message or its records.
-func (m *Message) ParseBytes(byteSlice []byte) (int, error) {
+func (m *Message) Unmarshal(buf []byte) (int, error) {
+	m.Reset()
 	i := 0
-	for i < len(byteSlice) {
+	for i < len(buf) {
 		r := new(Record)
-		rLen, err := r.ParseBytes(byteSlice[i:])
+		rLen, err := r.Unmarshal(buf[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -121,19 +130,19 @@ func (m *Message) ParseBytes(byteSlice []byte) (int, error) {
 	return i, nil
 }
 
-// Bytes provides the byte slice representation of a Message
+// Marshal provides the byte slice representation of a Message
 //
 // There are two ways this can happen. If there are any Records,
-// the concatenation of the Bytes() for each record is provided.
+// the concatenation of the Marshal() for each record is provided.
 // Otherwise, a single record is produced from the Message fields
-// (TNF, Type, ID, Payload) and its Bytes() returned.
+// (TNF, Type, ID, Payload) and its Marshal() returned.
 //
 // This allows the possibility of creating an NDEF Message by either
 // setting the fields of the Message struct, or by manually providing the
 // NDEF Record(s) with SetRecords().
 //
 // Returns an error if something goes wrong.
-func (m *Message) Bytes() ([]byte, error) {
+func (m *Message) Marshal() ([]byte, error) {
 	if len(m.records) > 0 {
 		// We have records. Just concat their Bytes. But test first
 		if err := m.checkRecords(); err != nil {
@@ -141,7 +150,7 @@ func (m *Message) Bytes() ([]byte, error) {
 		}
 		var buffer bytes.Buffer
 		for _, r := range m.records {
-			rBytes, err := r.Bytes()
+			rBytes, err := r.Marshal()
 			if err != nil {
 				return nil, err
 			}
@@ -180,7 +189,7 @@ func (m *Message) Bytes() ([]byte, error) {
 	tempRecord.Payload = m.Payload[:payloadLen]
 	tempMessage := new(Message)
 	tempMessage.SetRecords([]*Record{tempRecord})
-	return tempMessage.Bytes() // A message with 1 record
+	return tempMessage.Marshal() // A message with 1 record
 }
 
 // Set some short-hands for the errors that can happen on checkRecords().

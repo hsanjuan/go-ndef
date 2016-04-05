@@ -37,14 +37,14 @@ func ExampleMessage() {
 	// urn:nfc:wkt:U:https://github.com/hsanjuan/ndef
 }
 
-func ExampleMessage_ParseBytes() {
+func ExampleMessage_Unmarshal() {
 	ndefMessageBytes := []byte{0xd1, 0x01, 0x20, 0x54, 0x54, 0x68, 0x69,
 		0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x6d, 0x65, 0x73,
 		0x73, 0x61, 0x67, 0x65, 0x20, 0x6f, 0x66, 0x20, 0x54, 0x5b,
 		0x65, 0x78, 0x74, 0x5d, 0x20, 0x74, 0x79, 0x70, 0x65}
-	ndefMessage := &Message{}                          // Create uninitialized message
-	_, err := ndefMessage.ParseBytes(ndefMessageBytes) // Parse bytes into it
-	if err != nil {                                    // Your bytes don't look good
+	ndefMessage := &Message{}                         // Create uninitialized message
+	_, err := ndefMessage.Unmarshal(ndefMessageBytes) // Parse bytes into it
+	if err != nil {                                   // Your bytes don't look good
 		fmt.Println(err)
 		return
 	}
@@ -53,7 +53,7 @@ func ExampleMessage_ParseBytes() {
 	// urn:nfc:wkt:T:This is a message of T[ext] type
 }
 
-func TestMessageBytesAndParsing(t *testing.T) {
+func TestMessageMarshalUnmarshal(t *testing.T) {
 	t.Log("Testing a Message created with a provided NDEF Record")
 	r := &Record{
 		MB:            true,
@@ -72,16 +72,16 @@ func TestMessageBytesAndParsing(t *testing.T) {
 
 	m := new(Message)
 	m.SetRecords([]*Record{r})
-	mBytes, err := m.Bytes()
+	mBytes, err := m.Marshal()
 	if err != nil {
 		t.Error(err)
 	}
 	m2 := new(Message)
-	_, err = m2.ParseBytes(mBytes)
+	_, err = m2.Unmarshal(mBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	m2Bytes, err := m2.Bytes()
+	m2Bytes, err := m2.Marshal()
 	if err != nil {
 		t.Error(err)
 	}
@@ -98,13 +98,13 @@ func TestMessageBytesAndParsing(t *testing.T) {
 		Type:    []byte("test"),
 		Payload: []byte("abc"),
 	}
-	mBytes, _ = m.Bytes()
+	mBytes, _ = m.Marshal()
 	m2 = new(Message)
-	_, err = m2.ParseBytes(mBytes)
+	_, err = m2.Unmarshal(mBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	m2Bytes, err = m2.Bytes()
+	m2Bytes, err = m2.Marshal()
 	if err != nil {
 		t.Error(err)
 	}
@@ -398,12 +398,12 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 	}
 
 	// Since we are here, test that we can reparse correctly
-	mBytes, err := m.Bytes()
+	mBytes, err := m.Marshal()
 	if err != nil {
 		t.Error(err)
 	}
 	m2 := &Message{}
-	m2.ParseBytes(mBytes)
+	m2.Unmarshal(mBytes)
 	if string(m2.Payload) != "abcd" {
 		t.Error("Payload is not what we would expect!")
 	}

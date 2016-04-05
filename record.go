@@ -44,6 +44,23 @@ type Record struct {
 	Payload       []byte  // Payload
 }
 
+// Reset clears up all the fields of the Record and sets them to their
+// default values.
+func (r *Record) Reset() {
+	r.MB = false
+	r.ME = false
+	r.CF = false
+	r.SR = false
+	r.IL = false
+	r.TNF = 0
+	r.TypeLength = 0
+	r.IDLength = 0
+	r.PayloadLength = [4]byte{0, 0, 0, 0}
+	r.Type = []byte{}
+	r.ID = []byte{}
+	r.Payload = []byte{}
+}
+
 // Provide a string with information about this record.
 // Records' payload do not make sense without having compiled a whole Message
 // so they are not dealed with here.
@@ -68,17 +85,19 @@ func (r *Record) String() string {
 	return str
 }
 
-// BUG(hector): ParseBytes() will panic badly if there are not enough bytes
+// BUG(hector): Unmarshal() will panic badly if there are not enough bytes
 // in the slice
 
-// ParseBytes parses a byte slice into a single Record struct (the slice can
-// have extra bytes which are ignored).
+// Unmarshal parses a byte slice into a single Record struct (the slice can
+// have extra bytes which are ignored). The Record is always reset before
+// parsing.
 //
 // Returns how many bytes were parsed from the slice (record length) or
 // an error if something went wrong.
-func (r *Record) ParseBytes(bytes []byte) (int, error) {
+func (r *Record) Unmarshal(buf []byte) (int, error) {
+	r.Reset()
 	i := 0
-	firstByte := bytes[i]
+	firstByte := buf[i]
 	r.MB = (firstByte >> 7 & 0x1) == 1
 	r.ME = (firstByte >> 6 & 0x1) == 1
 	r.CF = (firstByte >> 5 & 0x1) == 1
@@ -87,40 +106,40 @@ func (r *Record) ParseBytes(bytes []byte) (int, error) {
 	r.TNF = firstByte & 0x7
 	i++
 
-	r.TypeLength = bytes[i]
+	r.TypeLength = buf[i]
 	i++
 
 	var payloadLen int
 	if r.SR { //This is a short record
-		r.PayloadLength[0] = bytes[i]
+		r.PayloadLength[0] = buf[i]
 		i++
 		payloadLen = int(r.PayloadLength[0])
 	} else { // Regular record
 		var pl [4]byte
-		copy(pl[:], bytes[i:i+4])
+		copy(pl[:], buf[i:i+4])
 		r.PayloadLength = pl
 		i += 4
 		payloadLen = int(bytesToUint64(r.PayloadLength[:]))
 	}
 	if r.IL {
-		r.IDLength = bytes[i]
+		r.IDLength = buf[i]
 		i++
 	}
-	r.Type = bytes[i : i+int(r.TypeLength)]
+	r.Type = buf[i : i+int(r.TypeLength)]
 	i += int(r.TypeLength)
 	if r.IL {
-		r.ID = bytes[i : i+int(r.IDLength)]
+		r.ID = buf[i : i+int(r.IDLength)]
 		i += int(r.IDLength)
 	}
-	r.Payload = bytes[i : i+payloadLen]
+	r.Payload = buf[i : i+payloadLen]
 	i += payloadLen
 	// Return the records length
 	return i, nil
 }
 
-// Bytes returns the byte representation of a Record, or an error
+// Marshal returns the byte representation of a Record, or an error
 // if something went wrong
-func (r *Record) Bytes() ([]byte, error) {
+func (r *Record) Marshal() ([]byte, error) {
 	var buffer bytes.Buffer
 	firstByte := byte(0)
 	if r.MB {
