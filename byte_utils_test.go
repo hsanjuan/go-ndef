@@ -29,7 +29,7 @@ func TestBytesToUint64(t *testing.T) {
 		3: []byte{10, 12, 30, 1, 0, 0, 0, 0, 0, 0, 0, 3},
 	}
 	for expected, test := range cases {
-		result := BytesToUint64(test)
+		result := bytesToUint64(test)
 		if result != expected {
 			t.Error("Result/Expected:", result, expected)
 		}
@@ -47,7 +47,7 @@ func TestUint64ToBytes(t *testing.T) {
 		{10, 10, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 10}},
 	}
 	for _, tc := range cases {
-		result := Uint64ToBytes(tc.Number, tc.L)
+		result := uint64ToBytes(tc.Number, tc.L)
 		if !bytes.Equal(result, tc.Expected) {
 			t.Error("Result/Expected:", result, tc.Expected)
 		}

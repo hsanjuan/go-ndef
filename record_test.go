@@ -52,8 +52,8 @@ func TestRecordBytesAndParsing(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("R1:", FmtBytes(rBytes, len(rBytes)))
-	t.Log("R2:", FmtBytes(r2Bytes, len(r2Bytes)))
+	t.Log("R1:", fmtBytes(rBytes, len(rBytes)))
+	t.Log("R2:", fmtBytes(r2Bytes, len(r2Bytes)))
 	if !bytes.Equal(rBytes, r2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Record")
 	}
@@ -88,8 +88,8 @@ func TestRecordBytesAndParsing(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("R1:", FmtBytes(rBytes, len(rBytes)))
-	t.Log("R2:", FmtBytes(r2Bytes, len(r2Bytes)))
+	t.Log("R1:", fmtBytes(rBytes, len(rBytes)))
+	t.Log("R2:", fmtBytes(r2Bytes, len(r2Bytes)))
 	if !bytes.Equal(rBytes, r2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Record")
 	}

@@ -103,7 +103,7 @@ func (m *Message) ParseBytes(byteSlice []byte) (int, error) {
 		}
 	}
 
-	err := m.TestRecords()
+	err := m.checkRecords()
 	if err != nil {
 		return 0, err
 	}
@@ -136,7 +136,7 @@ func (m *Message) ParseBytes(byteSlice []byte) (int, error) {
 func (m *Message) Bytes() ([]byte, error) {
 	if len(m.records) > 0 {
 		// We have records. Just concat their Bytes. But test first
-		if err := m.TestRecords(); err != nil {
+		if err := m.checkRecords(); err != nil {
 			return nil, err
 		}
 		var buffer bytes.Buffer
@@ -173,7 +173,7 @@ func (m *Message) Bytes() ([]byte, error) {
 	} else { // Long record
 		tempRecord.SR = false
 		copy(tempRecord.PayloadLength[:],
-			Uint64ToBytes(uint64(payloadLen), 4))
+			uint64ToBytes(uint64(payloadLen), 4))
 	}
 	// FIXME: If payload is greater than 2^32 - 1
 	// we'll truncate without warning with this
@@ -183,41 +183,41 @@ func (m *Message) Bytes() ([]byte, error) {
 	return tempMessage.Bytes() // A message with 1 record
 }
 
-// Set some short-hands for the errors that can happen on TestRecords().
+// Set some short-hands for the errors that can happen on checkRecords().
 const (
-	ENORECORDS     = "Message.TestRecords: No records"
-	ENOMB          = "Message.TestRecords: First record has not the MessageBegin flag set"
-	EFIRSTCHUNKED  = "Message.TestRecords: A single record cannot have the Chunk flag set"
-	ENOME          = "Message.TestRecords: Last record has not the MessageEnd flag set"
-	ELASTCHUNKED   = "Message.TestRecords: Last record cannot have the Chunk flag set"
-	ECFMISSING     = "Message.TestRecords: Chunk Flag missing from some records"
-	EBADIL         = "Message.TestRecords: IL flag is set on a middle or final chunk"
-	EBADTYPELENGTH = "Message.TestRecords: A middle or last chunk has TypeLength != 0"
-	EBADTNF        = "Message.TestRecords: A middle or last chunk TNF is not UNCHANGED"
+	eNORECORDS     = "Message.checkRecords: No records"
+	eNOMB          = "Message.checkRecords: First record has not the MessageBegin flag set"
+	eFIRSTCHUNKED  = "Message.checkRecords: A single record cannot have the Chunk flag set"
+	eNOME          = "Message.checkRecords: Last record has not the MessageEnd flag set"
+	eLASTCHUNKED   = "Message.checkRecords: Last record cannot have the Chunk flag set"
+	eCFMISSING     = "Message.checkRecords: Chunk Flag missing from some records"
+	eBADIL         = "Message.checkRecords: IL flag is set on a middle or final chunk"
+	eBADTYPELENGTH = "Message.checkRecords: A middle or last chunk has TypeLength != 0"
+	eBADTNF        = "Message.checkRecords: A middle or last chunk TNF is not UNCHANGED"
 )
 
-// TestRecords performs checks which are inspired in the "2.5 NDEF Mechanisms
+// checkRecords performs checks which are inspired in the "2.5 NDEF Mechanisms
 // Test Requirements" section of the specification.
 //
 // Returns an error if the NDEF Message Records don't look good.
-func (m *Message) TestRecords() error {
+func (m *Message) checkRecords() error {
 	records := m.records
 	recordsLen := len(records)
 	last := recordsLen - 1
 	if recordsLen == 0 {
-		return errors.New(ENORECORDS)
+		return errors.New(eNORECORDS)
 	}
 	if !records[0].MB {
-		return errors.New(ENOMB)
+		return errors.New(eNOMB)
 	}
 	if recordsLen == 1 && records[0].CF {
-		return errors.New(EFIRSTCHUNKED)
+		return errors.New(eFIRSTCHUNKED)
 	}
 	if !records[last].ME {
-		return errors.New(ENOME)
+		return errors.New(eNOME)
 	}
 	if records[0].CF && records[last].CF {
-		return errors.New(ELASTCHUNKED)
+		return errors.New(eLASTCHUNKED)
 	}
 
 	if recordsLen > 1 {
@@ -244,16 +244,16 @@ func (m *Message) TestRecords() error {
 			}
 		}
 		if recordsWithoutCF > 0 {
-			return errors.New(ECFMISSING)
+			return errors.New(eCFMISSING)
 		}
 		if recordsWithIL > 0 {
-			return errors.New(EBADIL)
+			return errors.New(eBADIL)
 		}
 		if recordsWithTypeLength > 0 {
-			return errors.New(EBADTYPELENGTH)
+			return errors.New(eBADTYPELENGTH)
 		}
 		if recordsWithoutUnchangedType > 0 {
-			return errors.New(EBADTNF)
+			return errors.New(eBADTNF)
 		}
 	}
 	return nil
@@ -264,6 +264,15 @@ func (m *Message) TestRecords() error {
 // This is useful for testing and for those who require to
 // produce a chunked NDEF Message. In this case, manual construction of
 // every record is necessary, along with a good read of the specification.
-func (m *Message) SetRecords(records []*Record) {
+//
+// SetRecords returns an error if records are not matching the specification
+// rules.
+func (m *Message) SetRecords(records []*Record) error {
+	prevRecords := m.records
 	m.records = records
+	if err := m.checkRecords(); err != nil {
+		m.records = prevRecords
+		return err
+	}
+	return nil
 }

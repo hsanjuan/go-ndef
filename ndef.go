@@ -35,7 +35,7 @@ const (
 )
 
 // URIProtocols provides a mapping between the first byte if a NDEF Payload of
-// type "U" (URI) and the string value for the protocol
+// type "U" (URI) and the string value for the protocol.
 var URIProtocols = map[byte]string{
 	0:  "",
 	1:  "http://www.",

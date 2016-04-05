@@ -85,8 +85,8 @@ func TestMessageBytesAndParsing(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("M1:", FmtBytes(mBytes, len(mBytes)))
-	t.Log("M2:", FmtBytes(m2Bytes, len(m2Bytes)))
+	t.Log("M1:", fmtBytes(mBytes, len(mBytes)))
+	t.Log("M2:", fmtBytes(m2Bytes, len(m2Bytes)))
 	if !bytes.Equal(mBytes, m2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Message")
 	}
@@ -108,8 +108,8 @@ func TestMessageBytesAndParsing(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("M1:", FmtBytes(mBytes, len(mBytes)))
-	t.Log("M2:", FmtBytes(m2Bytes, len(m2Bytes)))
+	t.Log("M1:", fmtBytes(mBytes, len(mBytes)))
+	t.Log("M2:", fmtBytes(m2Bytes, len(m2Bytes)))
 	if !bytes.Equal(mBytes, m2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Message")
 	}
@@ -200,21 +200,21 @@ func TestMessageString(t *testing.T) {
 
 func TestNDEFBadMessageTest(t *testing.T) {
 	cases := []struct{ Expected string }{
-		{ENORECORDS},
-		{ENOMB},
-		{EFIRSTCHUNKED},
-		{ENOME},
-		{ELASTCHUNKED},
-		{ECFMISSING},
-		{EBADIL},
-		{EBADTYPELENGTH},
-		{EBADTNF},
+		{eNORECORDS},
+		{eNOMB},
+		{eFIRSTCHUNKED},
+		{eNOME},
+		{eLASTCHUNKED},
+		{eCFMISSING},
+		{eBADIL},
+		{eBADTYPELENGTH},
+		{eBADTNF},
 	}
 
 	errs := []error{}
 
 	m := &Message{} // 0 records
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	// First record is not MB
 	rs := []*Record{
@@ -225,7 +225,7 @@ func TestNDEFBadMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	// First and only record is chuncked
 	rs = []*Record{
@@ -236,7 +236,7 @@ func TestNDEFBadMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	// Last record is not ME
 	rs = []*Record{
@@ -246,7 +246,7 @@ func TestNDEFBadMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	// Last record is Chunked
 	rs = []*Record{
@@ -262,7 +262,7 @@ func TestNDEFBadMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	// Record missing CF
 	rs = []*Record{
@@ -278,7 +278,7 @@ func TestNDEFBadMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	// Non-first record with IL
 	rs = []*Record{
@@ -300,7 +300,7 @@ func TestNDEFBadMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	// Non-first record with TypeLength
 	rs = []*Record{
@@ -320,7 +320,7 @@ func TestNDEFBadMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	// Non-first record with BAD TNF
 	rs = []*Record{
@@ -341,7 +341,7 @@ func TestNDEFBadMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	errs = append(errs, m.TestRecords())
+	errs = append(errs, m.checkRecords())
 
 	for i, err := range errs {
 		t.Logf("Expected: %s...", cases[i].Expected)
@@ -392,7 +392,7 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 		},
 	}
 	m.records = rs
-	err := m.TestRecords()
+	err := m.checkRecords()
 	if err != nil {
 		t.Error("Message was good but failed because:", err)
 	}

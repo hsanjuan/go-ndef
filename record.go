@@ -58,11 +58,11 @@ func (r *Record) String() string {
 			r.PayloadLength[0])
 	} else {
 		str += fmt.Sprintf("Record Payload Length: %d",
-			BytesToUint64(r.PayloadLength[:]))
+			bytesToUint64(r.PayloadLength[:]))
 	}
 	if r.IL {
 		str += fmt.Sprintf(" | IDLength: %d", r.IDLength)
-		str += fmt.Sprintf(" | ID: %x", BytesToUint64(r.ID))
+		str += fmt.Sprintf(" | ID: %x", bytesToUint64(r.ID))
 	}
 	str += fmt.Sprintf("\n")
 	return str
@@ -100,7 +100,7 @@ func (r *Record) ParseBytes(bytes []byte) (int, error) {
 		copy(pl[:], bytes[i:i+4])
 		r.PayloadLength = pl
 		i += 4
-		payloadLen = int(BytesToUint64(r.PayloadLength[:]))
+		payloadLen = int(bytesToUint64(r.PayloadLength[:]))
 	}
 	if r.IL {
 		r.IDLength = bytes[i]
