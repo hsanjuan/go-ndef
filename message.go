@@ -37,7 +37,7 @@ type Message struct {
 	records []*Record
 
 	TNF     byte   // See possible values in the constants.
-	Type    []byte // Message type. Typically
+	Type    []byte // Message type.
 	ID      []byte // Message ID is optional
 	Payload []byte // Message payload
 }
