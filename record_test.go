@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestRecordBytesAndParsing(t *testing.T) {
+func TestRecordMarshalUnmarshal(t *testing.T) {
 	t.Log("Testing with SR Record")
 	r := &Record{
 		MB:            true,
@@ -39,21 +39,21 @@ func TestRecordBytesAndParsing(t *testing.T) {
 		Payload:       []byte("abc"),
 	}
 
-	rBytes, err := r.Bytes()
+	rBytes, err := r.Marshal()
 	if err != nil {
 		t.Error(err)
 	}
 	r2 := new(Record)
-	_, err = r2.ParseBytes(rBytes)
+	_, err = r2.Unmarshal(rBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	r2Bytes, err := r2.Bytes()
+	r2Bytes, err := r2.Marshal()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("R1:", FmtBytes(rBytes, len(rBytes)))
-	t.Log("R2:", FmtBytes(r2Bytes, len(r2Bytes)))
+	t.Log("R1:", fmtBytes(rBytes, len(rBytes)))
+	t.Log("R2:", fmtBytes(r2Bytes, len(r2Bytes)))
 	if !bytes.Equal(rBytes, r2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Record")
 	}
@@ -75,21 +75,21 @@ func TestRecordBytesAndParsing(t *testing.T) {
 		Payload:       []byte("abc"),
 	}
 
-	rBytes, err = r.Bytes()
+	rBytes, err = r.Marshal()
 	if err != nil {
 		t.Error(err)
 	}
 	r2 = new(Record)
-	_, err = r2.ParseBytes(rBytes)
+	_, err = r2.Unmarshal(rBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	r2Bytes, err = r2.Bytes()
+	r2Bytes, err = r2.Marshal()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("R1:", FmtBytes(rBytes, len(rBytes)))
-	t.Log("R2:", FmtBytes(r2Bytes, len(r2Bytes)))
+	t.Log("R1:", fmtBytes(rBytes, len(rBytes)))
+	t.Log("R2:", fmtBytes(r2Bytes, len(r2Bytes)))
 	if !bytes.Equal(rBytes, r2Bytes) {
 		t.Error("We cannot produce the same bytes after re-parsing a Record")
 	}
