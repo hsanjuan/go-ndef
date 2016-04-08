@@ -50,15 +50,15 @@ func (m *Message) Reset() {
 	m.Payload = []byte{}
 }
 
-// Return a string with some information about the message, and if it's easy
-// enough to be placed in a string, the payload.
+// Return a string with some information about the NDEF message.
+// For plain text, URIs and Absolute URIs it returns the the payload as string.
+// For everything else, it returns an explanatory line about the Message type.
 func (m *Message) String() string {
 	var str string
 	switch m.TNF {
 	case Empty:
 		str += fmt.Sprintf("Payload is EMPTY.")
 	case NFCForumWellKnownType:
-		str += fmt.Sprintf("urn:nfc:wkt:%s:", string(m.Type))
 		switch string(m.Type) {
 		case "T": // Plain text
 			str += fmt.Sprintln(string(m.Payload))
@@ -67,13 +67,12 @@ func (m *Message) String() string {
 				URIProtocols[m.Payload[0]],
 				string(m.Payload[1:]))
 		default:
-			str += fmt.Sprintln("Payload is a NFC Forum Well" +
-				"Known Type but don't know how to print it.")
+			str += fmt.Sprintf("Payload is a NFC Forum Well"+
+				"Known Type: %s", string(m.Type))
 		}
 	case MediaType: // as defined at https://www.ietf.org/rfc/rfc2046.txt
 		str += fmt.Sprintf("Payload is a media type: %s. ",
 			string(m.Type))
-		str += fmt.Sprintln("Payload will not be printed")
 	case AbsoluteURI: // as defined https://www.ietf.org/rfc/rfc3986.txt
 		str += fmt.Sprintln(string(m.Payload))
 	case NFCForumExternalType:
