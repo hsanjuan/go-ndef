@@ -34,7 +34,7 @@ func ExampleMessage() {
 	}
 	fmt.Println(ndefMessage)
 	// Output:
-	// urn:nfc:wkt:U:https://github.com/hsanjuan/ndef
+	// https://github.com/hsanjuan/ndef
 }
 
 func ExampleMessage_Unmarshal() {
@@ -50,7 +50,7 @@ func ExampleMessage_Unmarshal() {
 	}
 	fmt.Println(ndefMessage) // Print some about the message
 	// Output:
-	// urn:nfc:wkt:T:This is a message of T[ext] type
+	// This is a message of T[ext] type
 }
 
 func TestMessageMarshalUnmarshal(t *testing.T) {
