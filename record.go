@@ -100,7 +100,7 @@ func (r *Record) Unmarshal(buf []byte) (rlen int, err error) {
 				panic(r)
 			}
 			err = r.(error)
-			err = errors.New("Record.Umarshal: " + err.Error())
+			err = errors.New("Record.Unmarshal: " + err.Error())
 		}
 	}()
 	r.Reset()
