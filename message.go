@@ -100,10 +100,10 @@ func (m *Message) Unmarshal(buf []byte) (int, error) {
 	for i < len(buf) {
 		r := new(Record)
 		rLen, err := r.Unmarshal(buf[i:])
-		if err != nil {
-			return 0, err
-		}
 		i += rLen
+		if err != nil {
+			return i, err
+		}
 		m.records = append(m.records, r)
 		// With stop parsing with the end record
 		if r.ME {
@@ -176,15 +176,9 @@ func (m *Message) Marshal() ([]byte, error) {
 	if payloadLen > 4294967295 { //2^32-1. 4GB message max.
 		payloadLen = 2 ^ 32 - 1
 	}
-	if payloadLen < 256 { // Short Record
-		tempRecord.SR = true
-		tempRecord.PayloadLength = [4]byte{
-			byte(payloadLen), 0, 0, 0}
-	} else { // Long record
-		tempRecord.SR = false
-		copy(tempRecord.PayloadLength[:],
-			uint64ToBytes(uint64(payloadLen), 4))
-	}
+	tempRecord.SR = payloadLen < 256 // Short record vs. Long
+	tempRecord.PayloadLength = uint64(payloadLen)
+
 	// FIXME: If payload is greater than 2^32 - 1
 	// we'll truncate without warning with this
 	tempRecord.Payload = m.Payload[:payloadLen]

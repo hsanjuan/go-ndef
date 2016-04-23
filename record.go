@@ -31,18 +31,18 @@ import (
 // record uses 4 bytes instead.
 type Record struct {
 	// First byte
-	MB            bool    // Message begin
-	ME            bool    // Message end
-	CF            bool    // Chunk Flag
-	SR            bool    // Short record
-	IL            bool    // ID length field present
-	TNF           byte    // Type name format (3 bits)
-	TypeLength    byte    // Type Length
-	IDLength      byte    // Length of the ID field
-	PayloadLength [4]byte // Length of the Payload. For SR: only first byte.
-	Type          []byte  // Type of the payload. Must follow TNF
-	ID            []byte  // Unique ID, only in MB record
-	Payload       []byte  // Payload
+	MB            bool   // Message begin
+	ME            bool   // Message end
+	CF            bool   // Chunk Flag
+	SR            bool   // Short record
+	IL            bool   // ID length field present
+	TNF           byte   // Type name format (3 bits)
+	TypeLength    byte   // Type Length
+	IDLength      byte   // Length of the ID field
+	PayloadLength uint64 // Length of the Payload.
+	Type          []byte // Type of the payload. Must follow TNF
+	ID            []byte // Unique ID, only in MB record
+	Payload       []byte // Payload
 }
 
 // Reset clears up all the fields of the Record and sets them to their
@@ -56,7 +56,7 @@ func (r *Record) Reset() {
 	r.TNF = 0
 	r.TypeLength = 0
 	r.IDLength = 0
-	r.PayloadLength = [4]byte{0, 0, 0, 0}
+	r.PayloadLength = 0
 	r.Type = []byte{}
 	r.ID = []byte{}
 	r.Payload = []byte{}
@@ -71,13 +71,8 @@ func (r *Record) String() string {
 		r.MB, r.ME, r.CF, r.SR, r.IL, r.TNF)
 	str += fmt.Sprintf("TypeLength: %d", r.TypeLength)
 	str += fmt.Sprintf(" | Type: %s\n", string(r.Type))
-	if r.SR {
-		str += fmt.Sprintf("Record Payload Length: %d",
-			r.PayloadLength[0])
-	} else {
-		str += fmt.Sprintf("Record Payload Length: %d",
-			bytesToUint64(r.PayloadLength[:]))
-	}
+	str += fmt.Sprintf("Record Payload Length: %d",
+		r.PayloadLength)
 	if r.IL {
 		str += fmt.Sprintf(" | IDLength: %d", r.IDLength)
 		str += fmt.Sprintf(" | ID: %x", bytesToUint64(r.ID))
@@ -116,15 +111,10 @@ func (r *Record) Unmarshal(buf []byte) (rlen int, err error) {
 
 	r.TypeLength = getByte(bytesBuf)
 
-	var payloadLen int
 	if r.SR { //This is a short record
-		r.PayloadLength[0] = getByte(bytesBuf)
-		payloadLen = int(r.PayloadLength[0])
+		r.PayloadLength = uint64(getByte(bytesBuf))
 	} else { // Regular record
-		var pl [4]byte
-		copy(pl[:], getBytes(bytesBuf, 4))
-		r.PayloadLength = pl
-		payloadLen = int(bytesToUint64(r.PayloadLength[:]))
+		r.PayloadLength = bytesToUint64(getBytes(bytesBuf, 4))
 	}
 	if r.IL {
 		r.IDLength = getByte(bytesBuf)
@@ -133,7 +123,7 @@ func (r *Record) Unmarshal(buf []byte) (rlen int, err error) {
 	if r.IL {
 		r.ID = getBytes(bytesBuf, int(r.IDLength))
 	}
-	r.Payload = getBytes(bytesBuf, payloadLen)
+	r.Payload = getBytes(bytesBuf, int(r.PayloadLength))
 	// Return the records length:
 	// length of original buffer - length of unread portion.
 	return len(buf) - bytesBuf.Len(), nil
@@ -166,9 +156,9 @@ func (r *Record) Marshal() ([]byte, error) {
 
 	// Payload Length byte (for SR) or 4 bytes for the regular case
 	if r.SR {
-		buffer.WriteByte(r.PayloadLength[0])
+		buffer.WriteByte(byte(r.PayloadLength))
 	} else {
-		buffer.Write(r.PayloadLength[:])
+		buffer.Write(uint64ToBytes(r.PayloadLength, 4))
 	}
 
 	// ID Length byte if we are meant to have it
