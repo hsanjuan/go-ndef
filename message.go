@@ -61,7 +61,7 @@ func (m *Message) String() string {
 	case NFCForumWellKnownType:
 		switch string(m.Type) {
 		case "T": // Plain text
-			str += fmt.Sprintln(string(m.Payload))
+			str += fmt.Sprint(string(m.Payload))
 		case "U": // URI
 			str += fmt.Sprintf("%s%s",
 				URIProtocols[m.Payload[0]],
