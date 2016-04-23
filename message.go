@@ -61,7 +61,7 @@ func (m *Message) String() string {
 	case NFCForumWellKnownType:
 		switch string(m.Type) {
 		case "T": // Plain text
-			str += fmt.Sprintln(string(m.Payload))
+			str += fmt.Sprint(string(m.Payload))
 		case "U": // URI
 			str += fmt.Sprintf("%s%s",
 				URIProtocols[m.Payload[0]],
@@ -100,12 +100,12 @@ func (m *Message) Unmarshal(buf []byte) (int, error) {
 	for i < len(buf) {
 		r := new(Record)
 		rLen, err := r.Unmarshal(buf[i:])
-		if err != nil {
-			return 0, err
-		}
 		i += rLen
+		if err != nil {
+			return i, err
+		}
 		m.records = append(m.records, r)
-		// In case our byte
+		// With stop parsing with the end record
 		if r.ME {
 			break
 		}
@@ -113,7 +113,7 @@ func (m *Message) Unmarshal(buf []byte) (int, error) {
 
 	err := m.checkRecords()
 	if err != nil {
-		return 0, err
+		return i, err
 	}
 
 	firstRecord := m.records[0]
@@ -121,23 +121,34 @@ func (m *Message) Unmarshal(buf []byte) (int, error) {
 	m.Type = firstRecord.Type
 	m.ID = firstRecord.ID
 
+	// The payload is the concatenation of the payloads in
+	// each record
 	var buffer bytes.Buffer
 	for _, r := range m.records {
 		buffer.Write(r.Payload)
 	}
 	m.Payload = buffer.Bytes()
+
+	// Clear the records. We do this because
+	// otherwise, if the Message is mutated,
+	// the Marshaling would be based off the original
+	// records, and the mutations would not happen, which
+	// would be really misleading.
+	m.records = []*Record{}
+
 	return i, nil
 }
 
 // Marshal provides the byte slice representation of a Message
 //
-// There are two ways this can happen. If there are any Records,
+// There are two ways this can happen. If there are any Records
+// (SetRecords() has been used on this Message),
 // the concatenation of the Marshal() for each record is provided.
 // Otherwise, a single record is produced from the Message fields
 // (TNF, Type, ID, Payload) and its Marshal() returned.
 //
 // This allows the possibility of creating an NDEF Message by either
-// setting the fields of the Message struct, or by manually providing the
+// setting/editing the fields of the Message struct, or by manually the
 // NDEF Record(s) with SetRecords().
 //
 // Returns an error if something goes wrong.
@@ -174,15 +185,9 @@ func (m *Message) Marshal() ([]byte, error) {
 	if payloadLen > 4294967295 { //2^32-1. 4GB message max.
 		payloadLen = 2 ^ 32 - 1
 	}
-	if payloadLen < 256 { // Short Record
-		tempRecord.SR = true
-		tempRecord.PayloadLength = [4]byte{
-			byte(payloadLen), 0, 0, 0}
-	} else { // Long record
-		tempRecord.SR = false
-		copy(tempRecord.PayloadLength[:],
-			uint64ToBytes(uint64(payloadLen), 4))
-	}
+	tempRecord.SR = payloadLen < 256 // Short record vs. Long
+	tempRecord.PayloadLength = uint64(payloadLen)
+
 	// FIXME: If payload is greater than 2^32 - 1
 	// we'll truncate without warning with this
 	tempRecord.Payload = m.Payload[:payloadLen]

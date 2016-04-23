@@ -33,7 +33,7 @@ func TestRecordMarshalUnmarshal(t *testing.T) {
 		TNF:           Unknown,
 		TypeLength:    4,
 		IDLength:      3,
-		PayloadLength: [4]byte{3, 0, 0, 0},
+		PayloadLength: 3,
 		Type:          []byte("test"),
 		ID:            []byte{1, 2, 3},
 		Payload:       []byte("abc"),
@@ -69,7 +69,7 @@ func TestRecordMarshalUnmarshal(t *testing.T) {
 		TNF:           Unknown,
 		TypeLength:    4,
 		IDLength:      3,
-		PayloadLength: [4]byte{0, 0, 0, 3},
+		PayloadLength: 3,
 		Type:          []byte("test"),
 		ID:            []byte{1, 2, 3},
 		Payload:       []byte("abc"),
@@ -95,6 +95,35 @@ func TestRecordMarshalUnmarshal(t *testing.T) {
 	}
 }
 
+func TestRecordUnmarshalTooShort(t *testing.T) {
+	t.Log("Testing with a truncated record bytes")
+	r := &Record{
+		MB:            true,
+		ME:            true,
+		CF:            false,
+		SR:            true,
+		IL:            true,
+		TNF:           Unknown,
+		TypeLength:    4,
+		IDLength:      3,
+		PayloadLength: 3,
+		Type:          []byte("test"),
+		ID:            []byte{1, 2, 3},
+		Payload:       []byte("abcdefg"),
+	}
+
+	rBytes, err := r.Marshal()
+	if err != nil {
+		t.Error(err)
+	}
+	r2 := new(Record)
+	_, err = r2.Unmarshal(rBytes[:len(rBytes)-5])
+	if err == nil {
+		t.Error("It should have errored")
+	}
+	t.Log("Throws error:", err)
+}
+
 func TestRecordString(t *testing.T) {
 	r := &Record{
 		MB:            true,
@@ -105,7 +134,22 @@ func TestRecordString(t *testing.T) {
 		TNF:           Unknown,
 		TypeLength:    4,
 		IDLength:      3,
-		PayloadLength: [4]byte{0, 0, 0, 3},
+		PayloadLength: 3,
+		Type:          []byte("test"),
+		ID:            []byte{1, 2, 3},
+		Payload:       []byte("abc"),
+	}
+	t.Log(r)
+	r = &Record{
+		MB:            true,
+		ME:            true,
+		CF:            false,
+		SR:            true,
+		IL:            true,
+		TNF:           Unknown,
+		TypeLength:    4,
+		IDLength:      3,
+		PayloadLength: 3,
 		Type:          []byte("test"),
 		ID:            []byte{1, 2, 3},
 		Payload:       []byte("abc"),

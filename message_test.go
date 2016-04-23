@@ -30,11 +30,11 @@ func ExampleMessage() {
 	ndefMessage := &Message{
 		TNF:     NFCForumWellKnownType,
 		Type:    []byte("U"),
-		Payload: []byte("\x04github.com/hsanjuan/ndef"),
+		Payload: []byte("\x04github.com/hsanjuan/go-ndef"),
 	}
 	fmt.Println(ndefMessage)
 	// Output:
-	// https://github.com/hsanjuan/ndef
+	// https://github.com/hsanjuan/go-ndef
 }
 
 func ExampleMessage_Unmarshal() {
@@ -64,7 +64,7 @@ func TestMessageMarshalUnmarshal(t *testing.T) {
 		TNF:           Unknown,
 		TypeLength:    4,
 		IDLength:      3,
-		PayloadLength: [4]byte{3, 0, 0, 0},
+		PayloadLength: 3,
 		Type:          []byte("test"),
 		ID:            []byte{1, 2, 3},
 		Payload:       []byte("abc"),
@@ -367,7 +367,7 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 			TNF:           NFCForumWellKnownType,
 			TypeLength:    1,
 			Type:          []byte("U"),
-			PayloadLength: [4]byte{1, 0, 0, 0},
+			PayloadLength: 1,
 			Payload:       []byte("a"),
 		},
 		&Record{
@@ -377,7 +377,7 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 			SR:            true,
 			TypeLength:    0,
 			TNF:           Unchanged,
-			PayloadLength: [4]byte{2, 0, 0, 0},
+			PayloadLength: 2,
 			Payload:       []byte("bc"),
 		},
 		&Record{
@@ -387,7 +387,7 @@ func TestNDEFGoodMessageTest(t *testing.T) {
 			SR:            true,
 			TypeLength:    0,
 			TNF:           Unchanged,
-			PayloadLength: [4]byte{1, 0, 0, 0},
+			PayloadLength: 1,
 			Payload:       []byte("d"),
 		},
 	}
