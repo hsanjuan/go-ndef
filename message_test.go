@@ -30,11 +30,11 @@ func ExampleMessage() {
 	ndefMessage := &Message{
 		TNF:     NFCForumWellKnownType,
 		Type:    []byte("U"),
-		Payload: []byte("\x04github.com/hsanjuan/ndef"),
+		Payload: []byte("\x04github.com/hsanjuan/go-ndef"),
 	}
 	fmt.Println(ndefMessage)
 	// Output:
-	// https://github.com/hsanjuan/ndef
+	// https://github.com/hsanjuan/go-ndef
 }
 
 func ExampleMessage_Unmarshal() {

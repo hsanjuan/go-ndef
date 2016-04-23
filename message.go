@@ -128,18 +128,27 @@ func (m *Message) Unmarshal(buf []byte) (int, error) {
 		buffer.Write(r.Payload)
 	}
 	m.Payload = buffer.Bytes()
+
+	// Clear the records. We do this because
+	// otherwise, if the Message is mutated,
+	// the Marshaling would be based off the original
+	// records, and the mutations would not happen, which
+	// would be really misleading.
+	m.records = []*Record{}
+
 	return i, nil
 }
 
 // Marshal provides the byte slice representation of a Message
 //
-// There are two ways this can happen. If there are any Records,
+// There are two ways this can happen. If there are any Records
+// (SetRecords() has been used on this Message),
 // the concatenation of the Marshal() for each record is provided.
 // Otherwise, a single record is produced from the Message fields
 // (TNF, Type, ID, Payload) and its Marshal() returned.
 //
 // This allows the possibility of creating an NDEF Message by either
-// setting the fields of the Message struct, or by manually providing the
+// setting/editing the fields of the Message struct, or by manually the
 // NDEF Record(s) with SetRecords().
 //
 // Returns an error if something goes wrong.
