@@ -19,8 +19,9 @@ package ndef
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	//	"errors"
+	"runtime"
 )
 
 // Record represents a NDEF Record, which is part of an NDEF Message.
@@ -85,56 +86,57 @@ func (r *Record) String() string {
 	return str
 }
 
-// BUG(hector): Unmarshal() will panic badly if there are not enough bytes
-// in the slice
-
 // Unmarshal parses a byte slice into a single Record struct (the slice can
 // have extra bytes which are ignored). The Record is always reset before
 // parsing.
 //
 // Returns how many bytes were parsed from the slice (record length) or
 // an error if something went wrong.
-func (r *Record) Unmarshal(buf []byte) (int, error) {
+func (r *Record) Unmarshal(buf []byte) (rlen int, err error) {
+	// Handle errors that are produced by getByte() and getBytes()
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(runtime.Error); ok {
+				panic(r)
+			}
+			err = r.(error)
+			err = errors.New("Record.Umarshal: " + err.Error())
+		}
+	}()
 	r.Reset()
-	i := 0
-	firstByte := buf[i]
+	bytesBuf := bytes.NewBuffer(buf)
+
+	firstByte := getByte(bytesBuf)
 	r.MB = (firstByte >> 7 & 0x1) == 1
 	r.ME = (firstByte >> 6 & 0x1) == 1
 	r.CF = (firstByte >> 5 & 0x1) == 1
 	r.SR = (firstByte >> 4 & 0x1) == 1
 	r.IL = (firstByte >> 3 & 0x1) == 1
 	r.TNF = firstByte & 0x7
-	i++
 
-	r.TypeLength = buf[i]
-	i++
+	r.TypeLength = getByte(bytesBuf)
 
 	var payloadLen int
 	if r.SR { //This is a short record
-		r.PayloadLength[0] = buf[i]
-		i++
+		r.PayloadLength[0] = getByte(bytesBuf)
 		payloadLen = int(r.PayloadLength[0])
 	} else { // Regular record
 		var pl [4]byte
-		copy(pl[:], buf[i:i+4])
+		copy(pl[:], getBytes(bytesBuf, 4))
 		r.PayloadLength = pl
-		i += 4
 		payloadLen = int(bytesToUint64(r.PayloadLength[:]))
 	}
 	if r.IL {
-		r.IDLength = buf[i]
-		i++
+		r.IDLength = getByte(bytesBuf)
 	}
-	r.Type = buf[i : i+int(r.TypeLength)]
-	i += int(r.TypeLength)
+	r.Type = getBytes(bytesBuf, int(r.TypeLength))
 	if r.IL {
-		r.ID = buf[i : i+int(r.IDLength)]
-		i += int(r.IDLength)
+		r.ID = getBytes(bytesBuf, int(r.IDLength))
 	}
-	r.Payload = buf[i : i+payloadLen]
-	i += payloadLen
-	// Return the records length
-	return i, nil
+	r.Payload = getBytes(bytesBuf, payloadLen)
+	// Return the records length:
+	// length of original buffer - length of unread portion.
+	return len(buf) - bytesBuf.Len(), nil
 }
 
 // Marshal returns the byte representation of a Record, or an error

@@ -105,7 +105,7 @@ func (m *Message) Unmarshal(buf []byte) (int, error) {
 		}
 		i += rLen
 		m.records = append(m.records, r)
-		// In case our byte
+		// With stop parsing with the end record
 		if r.ME {
 			break
 		}
@@ -113,7 +113,7 @@ func (m *Message) Unmarshal(buf []byte) (int, error) {
 
 	err := m.checkRecords()
 	if err != nil {
-		return 0, err
+		return i, err
 	}
 
 	firstRecord := m.records[0]
@@ -121,6 +121,8 @@ func (m *Message) Unmarshal(buf []byte) (int, error) {
 	m.Type = firstRecord.Type
 	m.ID = firstRecord.ID
 
+	// The payload is the concatenation of the payloads in
+	// each record
 	var buffer bytes.Buffer
 	for _, r := range m.records {
 		buffer.Write(r.Payload)

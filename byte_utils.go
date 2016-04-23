@@ -20,6 +20,7 @@ package ndef
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 )
 
@@ -69,4 +70,27 @@ func fmtBytes(bytes []byte, n int) (str string) {
 		str += fmt.Sprintf("%02x ", bytes[i])
 	}
 	return str
+}
+
+// Reads from the bytes buffer and panics with an error
+// if the buffer does not have the bytes to read that we want
+// This is meant as a replacement for byteslice[3:3+x] where
+// I don't have to constantly check the array length
+// but instead I throw a custom panic
+func getBytes(b *bytes.Buffer, n int) []byte {
+	slice := make([]byte, n)
+	nread, err := b.Read(slice)
+	if err != nil || nread != n {
+		panic(errors.New("Unexpected end of data."))
+	}
+	return slice
+}
+
+// Same as above bug for a single byte
+func getByte(b *bytes.Buffer) byte {
+	byte, err := b.ReadByte()
+	if err != nil {
+		panic(errors.New("Unexpected end of data"))
+	}
+	return byte
 }
