@@ -21,10 +21,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-
-	"github.com/hsanjuan/go-ndef/types"
-	"github.com/hsanjuan/go-ndef/types/wkt/text"
-	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
 
 // Record represents a consolidated NDEF Record (assembled, non-chunked),
@@ -108,19 +104,7 @@ func (r *Record) Unmarshal(buf []byte) (rLen int, err error) {
 		buffer.Write(c.Payload)
 	}
 	payloadBytes := buffer.Bytes()
-	switch r.TNF {
-	case NFCForumWellKnownType:
-		switch r.Type {
-		case "U":
-			r.Payload = new(uri.URI)
-		case "T":
-			r.Payload = new(text.Text)
-		default:
-			r.Payload = new(types.Generic)
-		}
-	default:
-		r.Payload = new(types.Generic)
-	}
+	r.Payload = makeRecordType(r.TNF, r.Type, payloadBytes)
 
 	r.Payload.Unmarshal(payloadBytes)
 	err = r.check()
