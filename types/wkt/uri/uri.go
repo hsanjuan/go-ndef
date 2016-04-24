@@ -116,3 +116,8 @@ func (u *URI) Unmarshal(buf []byte) {
 		u.URIField = string(buf[1:])
 	}
 }
+
+// Len is the length of the byte slice resulting of Marshaling
+func (u *URI) Len() int {
+	return len(u.Marshal())
+}

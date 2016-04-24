@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/hsanjuan/go-ndef/types"
 	"github.com/hsanjuan/go-ndef/types/wkt/text"
 	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
@@ -29,10 +30,10 @@ import (
 // Record represents a consolidated NDEF Record (assembled, non-chunked),
 // which is a part of an NDEF Message.
 type Record struct {
-	TNF     byte   // Type name format (3 bits)
-	Type    string // Type of the payload. Must follow TNF
-	ID      string // An URI (per RFC 3986)
-	Payload []byte // Payload
+	TNF     byte          // Type name format (3 bits)
+	Type    string        // Type of the payload. Must follow TNF
+	ID      string        // An URI (per RFC 3986)
+	Payload RecordPayload // Payload
 }
 
 // Reset clears up all the fields of the Record and sets them to their
@@ -41,34 +42,18 @@ func (r *Record) Reset() {
 	r.TNF = 0
 	r.Type = ""
 	r.ID = ""
-	r.Payload = []byte{}
+	r.Payload = nil
 }
 
 // String a string representation of the payload of the record, prefixed
 // by the URN of the resource.
 //
 // Note that not all NDEF Payloads are supported, and that custom types/payloads
-// are considered not printable. In those cases, an explanatory message is
-// returned instead. See submodules under "types/" for a list of supported
-// types.
+// are considered not printable. In those cases, a generic RecordPayload is
+// used and an explanatory message is returned instead.
+// See submodules under "types/" for a list of supported types.
 func (r *Record) String() string {
-	switch r.TNF {
-	case NFCForumWellKnownType:
-		switch r.Type {
-		case "T":
-			t := new(text.Text)
-			t.Unmarshal(r.Payload)
-			return t.URN() + ":" + t.String()
-		case "U":
-			u := new(uri.URI)
-			u.Unmarshal(r.Payload)
-			return u.URN() + ":" + u.String()
-		default:
-			return "<Contents not printable for this type>"
-		}
-	default:
-		return "<Contents not printable for this TNF>"
-	}
+	return r.Payload.URN() + ":" + r.Payload.String()
 }
 
 // Inspect provides a string with information about this record.
@@ -78,7 +63,7 @@ func (r *Record) Inspect() string {
 	str += fmt.Sprintf("TNF: %d\n", r.TNF)
 	str += fmt.Sprintf("Type: %s\n", r.Type)
 	str += fmt.Sprintf("ID: %s\n", r.ID)
-	str += fmt.Sprintf("Payload Length: %d", len(r.Payload))
+	str += fmt.Sprintf("Payload Length: %d", r.Payload.Len())
 	return str
 }
 
@@ -122,7 +107,22 @@ func (r *Record) Unmarshal(buf []byte) (rLen int, err error) {
 	for _, c := range chunks {
 		buffer.Write(c.Payload)
 	}
-	r.Payload = buffer.Bytes()
+	payloadBytes := buffer.Bytes()
+	switch r.TNF {
+	case NFCForumWellKnownType:
+		switch r.Type {
+		case "U":
+			r.Payload = new(uri.URI)
+		case "T":
+			r.Payload = new(text.Text)
+		default:
+			r.Payload = new(types.Generic)
+		}
+	default:
+		r.Payload = new(types.Generic)
+	}
+
+	r.Payload.Unmarshal(payloadBytes)
 	err = r.check()
 	return rLen, err
 }
@@ -148,7 +148,8 @@ func (r *Record) Marshal() ([]byte, error) {
 	tempChunk.IDLength = byte(len([]byte(r.ID)))
 	tempChunk.ID = r.ID
 
-	payloadLen := len(r.Payload)
+	rPayload := r.Payload.Marshal()
+	payloadLen := len(rPayload)
 
 	if payloadLen > 4294967295 { //2^32-1. 4GB message max.
 		payloadLen = 4294967295
@@ -158,7 +159,7 @@ func (r *Record) Marshal() ([]byte, error) {
 
 	// FIXME: If payload is greater than 2^32 - 1
 	// we'll truncate without warning with this
-	tempChunk.Payload = r.Payload[:payloadLen]
+	tempChunk.Payload = rPayload[:payloadLen]
 
 	rBytes, err := tempChunk.Marshal()
 	return rBytes, err

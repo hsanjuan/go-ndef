@@ -20,15 +20,21 @@ package ndef
 import (
 	"bytes"
 	"testing"
+
+	"github.com/hsanjuan/go-ndef/types"
+	"github.com/hsanjuan/go-ndef/types/wkt/text"
+	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
 
 func TestRecordMarshalUnmarshal(t *testing.T) {
 	t.Log("Testing a Record created with a provided chunk")
 	r := &Record{
-		TNF:     NFCForumExternalType,
-		Type:    "test",
-		ID:      "#ab",
-		Payload: []byte("abc"),
+		TNF:  NFCForumExternalType,
+		Type: "test",
+		ID:   "#ab",
+		Payload: &types.Generic{
+			Payload: []byte("abc"),
+		},
 	}
 
 	rBytes, err := r.Marshal()
@@ -55,26 +61,34 @@ func TestRecordString(t *testing.T) {
 	// Just test we are not crashing
 
 	m := &Record{
-		TNF:     NFCForumWellKnownType,
-		ID:      "#ab",
-		Type:    "T",
-		Payload: []byte("abc"),
+		TNF:  NFCForumWellKnownType,
+		ID:   "#ab",
+		Type: "T",
+		Payload: &text.Text{
+			Text:     "abc",
+			Language: "en",
+		},
 	}
 	t.Log(m)
 
 	m = &Record{
-		TNF:     NFCForumWellKnownType,
-		ID:      "#ab",
-		Type:    "U",
-		Payload: []byte("\x03abc"),
+		TNF:  NFCForumWellKnownType,
+		ID:   "#ab",
+		Type: "U",
+		Payload: &uri.URI{
+			IdentCode: 3,
+			URIField:  "abc",
+		},
 	}
 	t.Log(m)
 
 	m = &Record{
-		TNF:     NFCForumWellKnownType,
-		ID:      "#ab",
-		Type:    "X",
-		Payload: []byte("abc"),
+		TNF:  NFCForumWellKnownType,
+		ID:   "#ab",
+		Type: "X",
+		Payload: &types.Generic{
+			Payload: []byte("abc"),
+		},
 	}
 	t.Log(m)
 
@@ -84,37 +98,47 @@ func TestRecordString(t *testing.T) {
 	t.Log(m)
 
 	m = &Record{
-		TNF:     MediaType,
-		Type:    "image/jpeg",
-		Payload: []byte("abc"),
+		TNF:  MediaType,
+		Type: "image/jpeg",
+		Payload: &types.Generic{
+			Payload: []byte("\x03abc"),
+		},
 	}
 	t.Log(m)
 
 	m = &Record{
-		TNF:     AbsoluteURI,
-		ID:      "#ab",
-		Type:    "http://resource",
-		Payload: []byte("http://abc.de"),
+		TNF:  AbsoluteURI,
+		ID:   "#ab",
+		Type: "http://resource",
+		Payload: &types.Generic{
+			Payload: []byte(""),
+		},
 	}
 	t.Log(m)
 
 	m = &Record{
-		TNF:     NFCForumExternalType,
-		ID:      "#ab",
-		Type:    "T",
-		Payload: []byte("abc"),
+		TNF:  NFCForumExternalType,
+		ID:   "#ab",
+		Type: "T",
+		Payload: &types.Generic{
+			Payload: []byte("abc"),
+		},
 	}
 	t.Log(m)
 
 	m = &Record{
-		TNF:     Unknown,
-		Payload: []byte("abc"),
+		TNF: Unknown,
+		Payload: &types.Generic{
+			Payload: []byte("abc"),
+		},
 	}
 	t.Log(m)
 
 	m = &Record{
-		TNF:     Unchanged,
-		Payload: []byte("abc"),
+		TNF: Unchanged,
+		Payload: &types.Generic{
+			Payload: []byte("abc"),
+		},
 	}
 	t.Log(m)
 }
@@ -278,8 +302,8 @@ func TestNDEFGoodrecordChunkTest(t *testing.T) {
 			TNF:           NFCForumWellKnownType,
 			TypeLength:    1,
 			Type:          "U",
-			PayloadLength: 1,
-			Payload:       []byte("a"),
+			PayloadLength: 2,
+			Payload:       []byte("\x00a"),
 		},
 		&recordChunk{
 			MB:            false,
@@ -316,6 +340,7 @@ func TestNDEFGoodrecordChunkTest(t *testing.T) {
 			t.Log(err)
 			t.FailNow()
 		}
+		t.Logf("% 02x", cBytes)
 		buf.Write(cBytes)
 	}
 
@@ -325,7 +350,7 @@ func TestNDEFGoodrecordChunkTest(t *testing.T) {
 		t.Log(err)
 		t.FailNow()
 	}
-	if string(r.Payload) != "abcd" {
+	if r.Payload.String() != "abcd" {
 		t.Error("Payload is not what we would expect!")
 	}
 }

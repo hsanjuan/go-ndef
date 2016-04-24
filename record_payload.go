@@ -17,13 +17,39 @@
 
 package ndef
 
-// The RecordType interface should be implemented by supported
+import (
+	"github.com/hsanjuan/go-ndef/types"
+	"github.com/hsanjuan/go-ndef/types/wkt/text"
+	"github.com/hsanjuan/go-ndef/types/wkt/uri"
+)
+
+// The RecordPayload interface should be implemented by supported
 // NDEF Record types. It ensures that we have a way to interpret payloads
 // into printable information and to produce NDEF Record payloads for a given
 // type.
-type RecordType interface {
+type RecordPayload interface {
 	String() string
 	Marshal() []byte
 	Unmarshal(buf []byte)
 	URN() string
+	Len() int
+}
+
+func makeRecordPayload(tnf byte, rtype string, payload []byte) RecordPayload {
+	var r RecordPayload
+	switch tnf {
+	case NFCForumWellKnownType:
+		switch rtype {
+		case "U":
+			r = new(uri.URI)
+		case "T":
+			r = new(text.Text)
+		default:
+			r = new(types.Generic)
+		}
+	default:
+		r = new(types.Generic)
+	}
+	r.Unmarshal(payload)
+	return r
 }

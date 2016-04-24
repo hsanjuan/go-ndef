@@ -109,3 +109,8 @@ func (t *Text) Unmarshal(buf []byte) {
 		t.Text = string(buf[i:])
 	}
 }
+
+// Len is the length of the byte slice resulting of Marshaling
+func (t *Text) Len() int {
+	return len(t.Marshal())
+}

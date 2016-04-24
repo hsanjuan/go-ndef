@@ -37,7 +37,8 @@ func NewMessage(tnf byte, rtype string, id string, payload []byte) *Message {
 		TNF:     tnf,
 		Type:    rtype,
 		ID:      id,
-		Payload: payload}
+		Payload: makeRecordPayload(tnf, rtype, payload),
+	}
 	return &Message{
 		[]*Record{r},
 	}
