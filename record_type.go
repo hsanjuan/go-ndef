@@ -15,25 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-// BUG(hector): NDEF Messages with multiple payloads are not supported yet
-// (as in Smart Posters)
-
-// Package ndef provides an implementation of the NFC Data Exchange
-// Format (NDEF) specification:
-// - NFCForum-TS-NDEF_1.0
-// - NFCForum-TS-RTD_1.0
-// It allows to parse byte slices into a structured Message type,
-// as well as to turn an Message into a bytes again.
 package ndef
 
-// Possible values for the TNF Field as defined in the specification.
-const (
-	Empty = byte(iota)
-	NFCForumWellKnownType
-	MediaType
-	AbsoluteURI
-	NFCForumExternalType
-	Unknown
-	Unchanged
-	Reserved
-)
+// The RecordType interface should be implemented by supported
+// NDEF Record types. It ensures that we have a way to interpret payloads
+// into printable information and to produce NDEF Record payloads for a given
+// type.
+type RecordType interface {
+	String() string
+	Marshal() []byte
+	Unmarshal(buf []byte)
+	URN() string
+}
