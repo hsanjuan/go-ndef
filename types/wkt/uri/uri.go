@@ -19,7 +19,7 @@
 // It follows the NFC Forum URI Record Type Definition specification
 // (NFCForum-TS-RTD_URI_1.0).
 //
-// The URI type implements the RecordPayload interface from ndef,
+// The Payload type implements the RecordPayload interface from ndef,
 // so it can be used as ndef.Record.Payload.
 package uri
 
@@ -69,16 +69,17 @@ var URIProtocols = map[byte]string{
 	35: "urn:nfc:",
 }
 
-// URI represents a NDEF Record Payload of Type "U".
-type URI struct {
+// Payload represents a NDEF Record Payload of Type "U".
+type Payload struct {
 	IdentCode byte
 	URIField  string
 }
 
-// New returns a pointer to an URI object. The Identifier code is automatically
+// New returns a pointer to an Payload object.
+// The Identifier code is automatically
 // set based on the provided string.
-func New(uriStr string) *URI {
-	u := new(URI)
+func New(uriStr string) *Payload {
+	u := new(Payload)
 	u.URIField = uriStr
 	for i := byte(1); i < 36; i++ {
 		m, _ := regexp.MatchString("^"+URIProtocols[i], uriStr)
@@ -93,23 +94,23 @@ func New(uriStr string) *URI {
 }
 
 // String returns the URI string.
-func (u *URI) String() string {
+func (u *Payload) String() string {
 	return URIProtocols[u.IdentCode] + u.URIField
 }
 
 // URN returns the Uniform Resource Name for URIs.
-func (u *URI) URN() string {
+func (u *Payload) URN() string {
 	return "urn:nfc:wkt:U"
 }
 
 // Marshal returns the bytes representing the payload of a Record of URI type.
-func (u *URI) Marshal() []byte {
+func (u *Payload) Marshal() []byte {
 	p := []byte{u.IdentCode}
 	return append(p, []byte(u.URIField)...)
 }
 
 // Unmarshal parses the payload of a URI type record.
-func (u *URI) Unmarshal(buf []byte) {
+func (u *Payload) Unmarshal(buf []byte) {
 	u.IdentCode = 0
 	u.URIField = ""
 	if len(buf) > 0 {
@@ -121,6 +122,6 @@ func (u *URI) Unmarshal(buf []byte) {
 }
 
 // Len is the length of the byte slice resulting of Marshaling.
-func (u *URI) Len() int {
+func (u *Payload) Len() int {
 	return len(u.Marshal())
 }

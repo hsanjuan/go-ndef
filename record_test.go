@@ -30,7 +30,7 @@ func TestRecordMarshalUnmarshal(t *testing.T) {
 		TNF:  NFCForumExternalType,
 		Type: "test",
 		ID:   "#ab",
-		Payload: &types.Generic{
+		Payload: &generic.Payload{
 			Payload: []byte("abc"),
 		},
 	}
@@ -68,7 +68,7 @@ func TestRecordString(t *testing.T) {
 		TNF:  NFCForumWellKnownType,
 		ID:   "#ab",
 		Type: "X",
-		Payload: &types.Generic{
+		Payload: &generic.Payload{
 			Payload: []byte("abc"),
 		},
 	}
@@ -82,7 +82,7 @@ func TestRecordString(t *testing.T) {
 	m = &Record{
 		TNF:  MediaType,
 		Type: "image/jpeg",
-		Payload: &types.Generic{
+		Payload: &generic.Payload{
 			Payload: []byte("\x03abc"),
 		},
 	}
@@ -92,7 +92,7 @@ func TestRecordString(t *testing.T) {
 		TNF:  AbsoluteURI,
 		ID:   "#ab",
 		Type: "http://resource",
-		Payload: &types.Generic{
+		Payload: &generic.Payload{
 			Payload: []byte(""),
 		},
 	}
@@ -102,7 +102,7 @@ func TestRecordString(t *testing.T) {
 		TNF:  NFCForumExternalType,
 		ID:   "#ab",
 		Type: "T",
-		Payload: &types.Generic{
+		Payload: &generic.Payload{
 			Payload: []byte("abc"),
 		},
 	}
@@ -110,7 +110,7 @@ func TestRecordString(t *testing.T) {
 
 	m = &Record{
 		TNF: Unknown,
-		Payload: &types.Generic{
+		Payload: &generic.Payload{
 			Payload: []byte("abc"),
 		},
 	}
@@ -118,7 +118,7 @@ func TestRecordString(t *testing.T) {
 
 	m = &Record{
 		TNF: Unchanged,
-		Payload: &types.Generic{
+		Payload: &generic.Payload{
 			Payload: []byte("abc"),
 		},
 	}

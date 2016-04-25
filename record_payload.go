@@ -46,14 +46,14 @@ func makeRecordPayload(tnf byte, rtype string, payload []byte) RecordPayload {
 	case NFCForumWellKnownType:
 		switch rtype {
 		case "U":
-			r = new(uri.URI)
+			r = new(uri.Payload)
 		case "T":
-			r = new(text.Text)
+			r = new(text.Payload)
 		default:
-			r = new(types.Generic)
+			r = new(generic.Payload)
 		}
 	default:
-		r = new(types.Generic)
+		r = new(generic.Payload)
 	}
 	r.Unmarshal(payload)
 	return r

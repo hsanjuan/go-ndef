@@ -36,7 +36,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	tx := &Text{
+	tx := &Payload{
 		Language: "en_US",
 		Text:     "hey",
 	}
@@ -55,7 +55,7 @@ func TestMarshal(t *testing.T) {
 
 func TestUnmarshal(t *testing.T) {
 	bts := []byte{0x02, 0x65, 0x6e, 0x68, 0x65, 0x79}
-	tx := new(Text)
+	tx := new(Payload)
 	tx.Unmarshal(bts)
 	if tx.Language != "en" || tx.Text != "hey" {
 		t.Error("Bad unmarshaling")
@@ -63,7 +63,7 @@ func TestUnmarshal(t *testing.T) {
 
 	// Now with utf16
 	bts = []byte{0x82, 0x65, 0x6e, 0x00, 0x68, 0x00, 0x65, 0x00, 0x79}
-	tx = new(Text)
+	tx = new(Payload)
 	tx.Unmarshal(bts)
 	if tx.Language != "en" || tx.Text != "hey" {
 		t.Error("Bad unmarshaling in utf16")

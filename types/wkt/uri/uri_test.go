@@ -36,7 +36,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	u := &URI{
+	u := &Payload{
 		IdentCode: 20,
 		URIField:  "mail",
 	}
@@ -55,7 +55,7 @@ func TestMarshal(t *testing.T) {
 
 func TestUnmarshal(t *testing.T) {
 	bytes := []byte{0x02, 0x61, 0x2e, 0x61}
-	u := new(URI)
+	u := new(Payload)
 	u.Unmarshal(bytes)
 	if u.IdentCode != 2 || u.URIField != "a.a" {
 		t.Error("Bad unmarshaling")

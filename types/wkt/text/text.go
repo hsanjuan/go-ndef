@@ -24,7 +24,7 @@
 // It follows the NFC Forum Text Record Type Definition specification
 // (NFCForum-TS-RTD_Text_1.0).
 //
-// The URI type implements the RecordPayload interface from ndef,
+// The Payload type implements the RecordPayload interface from ndef,
 // so it can be used as ndef.Record.Payload.
 package text
 
@@ -34,36 +34,36 @@ import (
 	"unicode/utf16"
 )
 
-// Text represents a NDEF Record Payload of type "T", which
+// Payload represents a NDEF Record Payload of type "T", which
 // holds a text field and IANA-formatted language information.
-type Text struct {
+type Payload struct {
 	Language string
 	Text     string
 }
 
-// New returns a pointer to a Text.
+// New returns a pointer to a Payload.
 //
 // The language parameter must be compliant to RFC 3066 (i.e. "en_US"),
 // but no check is performed.
-func New(text, language string) *Text {
-	return &Text{
+func New(text, language string) *Payload {
+	return &Payload{
 		Language: language,
 		Text:     text,
 	}
 }
 
 // String returns the actual text. Language information is ommited.
-func (t *Text) String() string {
+func (t *Payload) String() string {
 	return t.Text
 }
 
-// URN returns the Uniform Resource Name for Text.
-func (t *Text) URN() string {
+// URN returns the Uniform Resource Name for Text types.
+func (t *Payload) URN() string {
 	return "urn:nfc:wkt:T"
 }
 
-// Marshal returns the bytes representing the payload of a Text Record.
-func (t *Text) Marshal() []byte {
+// Marshal returns the bytes representing the payload of a text Record.
+func (t *Payload) Marshal() []byte {
 	var buf bytes.Buffer
 	ianaLen := byte(len(t.Language))
 	buf.WriteByte(ianaLen)
@@ -72,8 +72,8 @@ func (t *Text) Marshal() []byte {
 	return buf.Bytes()
 }
 
-// Unmarshal parses the Payload from a Text Record.
-func (t *Text) Unmarshal(buf []byte) {
+// Unmarshal parses the Payload from a text Record.
+func (t *Payload) Unmarshal(buf []byte) {
 	t.Language = ""
 	t.Text = ""
 	i := byte(0)
@@ -114,6 +114,6 @@ func (t *Text) Unmarshal(buf []byte) {
 }
 
 // Len is the length of the byte slice resulting of Marshaling..
-func (t *Text) Len() int {
+func (t *Payload) Len() int {
 	return len(t.Marshal())
 }

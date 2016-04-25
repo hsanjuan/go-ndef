@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-package types
+package generic
 
 import (
 	"bytes"
@@ -49,7 +49,7 @@ func TestMarshal(t *testing.T) {
 
 func TestUnmarshal(t *testing.T) {
 	bts := []byte{0x79}
-	gen := new(Generic)
+	gen := new(Payload)
 	gen.Unmarshal(bts)
 	if !bytes.Equal(gen.Payload, []byte{0x79}) {
 		t.Error("Bad unmarshaling")
