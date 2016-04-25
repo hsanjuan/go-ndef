@@ -18,11 +18,14 @@
 // BUG(hector): The implementation ignores the guidelines about displaying the
 // text and removing the control characters.
 
-// BUG(hector): UTF-16 with different byte order, with/without BOM is not tested
+// BUG(hector): UTF-16 with different byte order, with/without BOM is not tested.
 
 // Package text provides support for NDEF Payloads of Text type.
 // It follows the NFC Forum Text Record Type Definition specification
 // (NFCForum-TS-RTD_Text_1.0).
+//
+// The URI type implements the RecordPayload interface from ndef,
+// so it can be used as ndef.Record.Payload.
 package text
 
 import (
@@ -54,12 +57,12 @@ func (t *Text) String() string {
 	return t.Text
 }
 
-// URN returns the Uniform Resource Name for Text
+// URN returns the Uniform Resource Name for Text.
 func (t *Text) URN() string {
 	return "urn:nfc:wkt:T"
 }
 
-// Marshal returns the bytes representing the payload of a Text Record
+// Marshal returns the bytes representing the payload of a Text Record.
 func (t *Text) Marshal() []byte {
 	var buf bytes.Buffer
 	ianaLen := byte(len(t.Language))
@@ -69,7 +72,7 @@ func (t *Text) Marshal() []byte {
 	return buf.Bytes()
 }
 
-// Unmarshal parses the Payload from a Text Record
+// Unmarshal parses the Payload from a Text Record.
 func (t *Text) Unmarshal(buf []byte) {
 	t.Language = ""
 	t.Text = ""
@@ -110,7 +113,7 @@ func (t *Text) Unmarshal(buf []byte) {
 	}
 }
 
-// Len is the length of the byte slice resulting of Marshaling
+// Len is the length of the byte slice resulting of Marshaling..
 func (t *Text) Len() int {
 	return len(t.Marshal())
 }

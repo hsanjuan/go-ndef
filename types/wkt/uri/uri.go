@@ -18,6 +18,9 @@
 // Package uri provides support for NDEF Payloads of URI type.
 // It follows the NFC Forum URI Record Type Definition specification
 // (NFCForum-TS-RTD_URI_1.0).
+//
+// The URI type implements the RecordPayload interface from ndef,
+// so it can be used as ndef.Record.Payload.
 package uri
 
 import (
@@ -72,7 +75,7 @@ type URI struct {
 	URIField  string
 }
 
-// New returns a pointer to an uri. The Identifier code is automatically
+// New returns a pointer to an URI object. The Identifier code is automatically
 // set based on the provided string.
 func New(uriStr string) *URI {
 	u := new(URI)
@@ -89,23 +92,23 @@ func New(uriStr string) *URI {
 	return u
 }
 
-// String returns the URI string
+// String returns the URI string.
 func (u *URI) String() string {
 	return URIProtocols[u.IdentCode] + u.URIField
 }
 
-// URN returns the Uniform Resource Name for URIs
+// URN returns the Uniform Resource Name for URIs.
 func (u *URI) URN() string {
 	return "urn:nfc:wkt:U"
 }
 
-// Marshal returns the bytes representing the payload of a Record of URI type
+// Marshal returns the bytes representing the payload of a Record of URI type.
 func (u *URI) Marshal() []byte {
 	p := []byte{u.IdentCode}
 	return append(p, []byte(u.URIField)...)
 }
 
-// Unmarshal parses the payload of a URI type record
+// Unmarshal parses the payload of a URI type record.
 func (u *URI) Unmarshal(buf []byte) {
 	u.IdentCode = 0
 	u.URIField = ""
@@ -117,7 +120,7 @@ func (u *URI) Unmarshal(buf []byte) {
 	}
 }
 
-// Len is the length of the byte slice resulting of Marshaling
+// Len is the length of the byte slice resulting of Marshaling.
 func (u *URI) Len() int {
 	return len(u.Marshal())
 }
