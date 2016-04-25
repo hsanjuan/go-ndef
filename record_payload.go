@@ -30,13 +30,13 @@ import (
 type RecordPayload interface {
 	// Returns a string representation of the Payload
 	String() string
-	// Provide serialization for the Payload
+	// Provides serialization for the Payload
 	Marshal() []byte
-	// Provide de-serialization for the Payload
+	// Provides de-serialization for the Payload
 	Unmarshal(buf []byte)
 	// Returns an Unified Resource Name for the Payload Type
 	URN() string
-	// Return the length of the Payload (serialized)
+	// Returns the length of the Payload (serialized)
 	Len() int
 }
 
