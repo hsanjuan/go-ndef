@@ -104,7 +104,7 @@ func (r *Record) Unmarshal(buf []byte) (rLen int, err error) {
 		buffer.Write(c.Payload)
 	}
 	payloadBytes := buffer.Bytes()
-	r.Payload = makeRecordType(r.TNF, r.Type, payloadBytes)
+	r.Payload = makeRecordPayload(r.TNF, r.Type, payloadBytes)
 
 	r.Payload.Unmarshal(payloadBytes)
 	err = r.check()
