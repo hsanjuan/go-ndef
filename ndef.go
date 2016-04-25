@@ -15,9 +15,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-// BUG(hector): NDEF Messages with multiple payloads are not supported yet
-// (as in Smart Posters)
-
 // Package ndef provides an implementation of the NFC Data Exchange
 // Format (NDEF) specification:
 // - NFCForum-TS-NDEF_1.0
