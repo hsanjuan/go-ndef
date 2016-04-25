@@ -21,6 +21,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
+	"github.com/hsanjuan/go-ndef/types/wkt/text"
+	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
 
 // Record represents a consolidated NDEF Record (assembled, non-chunked),
@@ -39,6 +42,28 @@ func (r *Record) Reset() {
 	r.Type = ""
 	r.ID = ""
 	r.Payload = nil
+}
+
+// NewTextRecord returns a pointer to a Record with a
+// Payload of Text [Well-Known] Type.
+func NewTextRecord(textVal, language string) *Record {
+	pl := text.New(textVal, language)
+	return &Record{
+		TNF:     NFCForumWellKnownType,
+		Type:    "T",
+		Payload: pl,
+	}
+}
+
+// NewURIRecord returns a pointer to a Record with a
+// Payload of URI [Well-Known] Type.
+func NewURIRecord(uriVal string) *Record {
+	pl := uri.New(uriVal)
+	return &Record{
+		TNF:     NFCForumWellKnownType,
+		Type:    "U",
+		Payload: pl,
+	}
 }
 
 // String a string representation of the payload of the record, prefixed

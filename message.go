@@ -44,6 +44,22 @@ func NewMessage(tnf byte, rtype string, id string, payload []byte) *Message {
 	}
 }
 
+// NewTextMessage returns a pointer to a Message with a single Record
+// of WellKnownType T[ext].
+func NewTextMessage(textVal, language string) *Message {
+	return &Message{
+		[]*Record{NewTextRecord(textVal, language)},
+	}
+}
+
+// NewURIMessage returns a pointer to a Message with a single Record
+// of WellKnownType U[RI].
+func NewURIMessage(uriVal string) *Message {
+	return &Message{
+		[]*Record{NewURIRecord(uriVal)},
+	}
+}
+
 // Reset clears the fields of a Message and puts them to their default values
 func (m *Message) Reset() {
 	m.Records = []*Record{}

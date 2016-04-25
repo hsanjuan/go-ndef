@@ -18,7 +18,7 @@
 package ndef
 
 import (
-	"github.com/hsanjuan/go-ndef/types"
+	"github.com/hsanjuan/go-ndef/types/generic"
 	"github.com/hsanjuan/go-ndef/types/wkt/text"
 	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )

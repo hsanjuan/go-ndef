@@ -17,7 +17,11 @@
 
 package ndef
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"testing"
+)
 
 func ExampleMessage() {
 	// Here we create a Message of type "U" (URI).
@@ -44,4 +48,24 @@ func ExampleMessage_Unmarshal() {
 	fmt.Println(ndefMessage) // Print the contents of every record
 	// Output:
 	// urn:nfc:wkt:T:This is a message of T[ext] type
+}
+
+func TestMarhsal(t *testing.T) {
+	m := NewURIMessage("http://s.com")
+	mBytes, err := m.Marshal()
+	if err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+	expectedBytes := []byte{
+		0xd1,                         //Flags+TNF
+		0x01,                         // TypeLen
+		0x06,                         // Payload Len
+		0x55,                         // Type
+		0x03,                         // URI code
+		0x73, 0x2e, 0x63, 0x6f, 0x6d, // URI
+	}
+	if !bytes.Equal(mBytes, expectedBytes) {
+		t.Error("Unexpected marshal result")
+	}
 }

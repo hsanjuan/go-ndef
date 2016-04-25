@@ -21,9 +21,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/hsanjuan/go-ndef/types"
-	"github.com/hsanjuan/go-ndef/types/wkt/text"
-	"github.com/hsanjuan/go-ndef/types/wkt/uri"
+	"github.com/hsanjuan/go-ndef/types/generic"
 )
 
 func TestRecordMarshalUnmarshal(t *testing.T) {
@@ -60,26 +58,10 @@ func TestRecordMarshalUnmarshal(t *testing.T) {
 func TestRecordString(t *testing.T) {
 	// Just test we are not crashing
 
-	m := &Record{
-		TNF:  NFCForumWellKnownType,
-		ID:   "#ab",
-		Type: "T",
-		Payload: &text.Text{
-			Text:     "abc",
-			Language: "en",
-		},
-	}
+	m := NewTextRecord("abc", "en")
 	t.Log(m)
 
-	m = &Record{
-		TNF:  NFCForumWellKnownType,
-		ID:   "#ab",
-		Type: "U",
-		Payload: &uri.URI{
-			IdentCode: 3,
-			URIField:  "abc",
-		},
-	}
+	m = NewURIRecord("http://abc")
 	t.Log(m)
 
 	m = &Record{

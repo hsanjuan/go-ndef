@@ -30,6 +30,9 @@ func TestNew(t *testing.T) {
 	if u.URIField != "something.com" {
 		t.Error("Bad removal of the protocol in New")
 	}
+	if u.URN() != "urn:nfc:wkt:U" {
+		t.Error("Unexpected URN")
+	}
 }
 
 func TestString(t *testing.T) {
@@ -56,5 +59,12 @@ func TestUnmarshal(t *testing.T) {
 	u.Unmarshal(bytes)
 	if u.IdentCode != 2 || u.URIField != "a.a" {
 		t.Error("Bad unmarshaling")
+	}
+}
+
+func TestLen(t *testing.T) {
+	u := New("http://ab.com")
+	if u.Len() != 7 {
+		t.Error("Unexpected length")
 	}
 }

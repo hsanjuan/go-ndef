@@ -41,7 +41,7 @@ type Text struct {
 	Text     string
 }
 
-// New returns a pointer to a Text
+// New returns a pointer to a Text.
 //
 // The language parameter must be compliant to RFC 3066 (i.e. "en_US"),
 // but no check is performed.

@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-package text
+package types
 
 import (
 	"bytes"
@@ -23,57 +23,42 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	tx := New("Text", "en")
-	if tx.Language != "en" {
-		t.Error("Should set language to 'en'")
+	gen := New([]byte{0x00})
+	if !bytes.Equal(gen.Payload, []byte{0x00}) {
+		t.Error("The type should hold the given payload")
 	}
-	if tx.Text != "Text" {
-		t.Error("Should set Text to 'Text'")
-	}
-	if tx.URN() != "urn:nfc:wkt:T" {
+	if gen.URN() != "urn:nfc:ext:go-ndef:generic" {
 		t.Error("Unexpected URN")
 	}
 }
 
 func TestString(t *testing.T) {
-	tx := &Text{
-		Language: "en_US",
-		Text:     "hey",
-	}
-	if tx.String() != "hey" {
+	gen := New([]byte{0x00})
+	if gen.String() != "<Non standard type: contents not printable>" {
 		t.Error("Bad string generation")
 	}
 }
 
 func TestMarshal(t *testing.T) {
-	tx := New("hey", "en")
-	pl := tx.Marshal()
-	if !bytes.Equal(pl, []byte{0x02, 0x65, 0x6e, 0x68, 0x65, 0x79}) {
+	gen := New([]byte{0x04})
+	pl := gen.Marshal()
+	if !bytes.Equal(pl, []byte{0x04}) {
 		t.Error("Bad payload generation")
 	}
 }
 
 func TestUnmarshal(t *testing.T) {
-	bts := []byte{0x02, 0x65, 0x6e, 0x68, 0x65, 0x79}
-	tx := new(Text)
-	tx.Unmarshal(bts)
-	if tx.Language != "en" || tx.Text != "hey" {
+	bts := []byte{0x79}
+	gen := new(Generic)
+	gen.Unmarshal(bts)
+	if !bytes.Equal(gen.Payload, []byte{0x79}) {
 		t.Error("Bad unmarshaling")
 	}
-
-	// Now with utf16
-	bts = []byte{0x82, 0x65, 0x6e, 0x00, 0x68, 0x00, 0x65, 0x00, 0x79}
-	tx = new(Text)
-	tx.Unmarshal(bts)
-	if tx.Language != "en" || tx.Text != "hey" {
-		t.Error("Bad unmarshaling in utf16")
-	}
-
 }
 
 func TestLen(t *testing.T) {
-	tx := New("ab", "en")
-	if tx.Len() != 5 {
+	gen := New([]byte{1, 2, 3})
+	if gen.Len() != 3 {
 		t.Error("Unexpected length")
 	}
 }

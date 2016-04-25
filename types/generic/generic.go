@@ -24,6 +24,13 @@ type Generic struct {
 	Payload []byte
 }
 
+// New returns a pointer to a Generic type holding the given payload
+func New(payload []byte) *Generic {
+	return &Generic{
+		Payload: payload,
+	}
+}
+
 // String returns a string explaining that we are not sure how to print
 // this type
 func (g *Generic) String() string {
