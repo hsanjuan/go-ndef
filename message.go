@@ -52,9 +52,12 @@ func (m *Message) Reset() {
 // Returns the string representation of each of the records in the message
 func (m *Message) String() string {
 	str := ""
-	for _, r := range m.Records {
+	last := len(m.Records) - 1
+	for i, r := range m.Records {
 		str += r.String()
-		str += "\n"
+		if i != last {
+			str += "\n"
+		}
 	}
 	return str
 }
