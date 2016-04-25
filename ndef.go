@@ -16,10 +16,11 @@
 ***/
 
 // Package ndef provides an implementation of the NFC Data Exchange
-// Format (NDEF) specification.
-//
+// Format (NDEF) specification:
+// - NFCForum-TS-NDEF_1.0
+// - NFCForum-TS-RTD_1.0
 // It allows to parse byte slices into a structured Message type,
-// as well as to turn an Message into a byte slice.
+// as well as to turn an Message into a bytes again.
 package ndef
 
 // Possible values for the TNF Field as defined in the specification.
@@ -33,44 +34,3 @@ const (
 	Unchanged
 	Reserved
 )
-
-// URIProtocols provides a mapping between the first byte if a NDEF Payload of
-// type "U" (URI) and the string value for the protocol.
-var URIProtocols = map[byte]string{
-	0:  "",
-	1:  "http://www.",
-	2:  "https://www.",
-	3:  "http://",
-	4:  "https://",
-	5:  "tel:",
-	6:  "mailto:",
-	7:  "ftp://anonymous:anonymous@",
-	8:  "ftp://ftp.",
-	9:  "ftps://",
-	10: "sftp://",
-	11: "smb://",
-	12: "nfs://",
-	13: "ftp://",
-	14: "dev://",
-	15: "news:",
-	16: "telnet://",
-	17: "imap:",
-	18: "rtsp://",
-	19: "urn:",
-	20: "pop:",
-	21: "sip:",
-	22: "sips:",
-	23: "tftp:",
-	24: "btspp://",
-	25: "btl2cap://",
-	26: "btgoep://",
-	27: "tcpobex://",
-	28: "irdaobex://",
-	29: "file://",
-	30: "urn:epc:id:",
-	31: "urn:epc:tag:",
-	32: "urn:epc:pat:",
-	33: "urn:epc:raw:",
-	34: "urn:epc:",
-	35: "urn:nfc:",
-}

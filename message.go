@@ -17,275 +17,111 @@
 
 package ndef
 
-import (
-	"bytes"
-	"errors"
-	"fmt"
-)
+import "bytes"
 
 // Message represents an NDEF Message, which is a collection of one or
-// more NDEF records.
+// more NDEF Records.
 //
-// Each message has a Type Name Field (TNF), a Type and an optional ID,
-// which are indicated by its first record. It also contains a Payload,
-// which is the concatenation of the payloads of all the chunks.
+// Most common types of NDEF Messages (URI, Media) only have a single
+// record. However, others, like Smart Posters, have multiple ones.
 type Message struct {
-	// NDEF records are set when parsing bytes, and re-used
-	// when generating bytes. They are not meant to be set
-	// directly, but there is a setter useful for testing and
-	// for someone that really needs to created a chunked Message
-	records []*Record
+	Records []*Record
+}
 
-	TNF     byte   // See possible values in the constants.
-	Type    []byte // Message type.
-	ID      []byte // Message ID is optional
-	Payload []byte // Message payload
+// NewMessage returns a pointer to a Message initialized with a single Record
+// with the TNF, Type, ID and Payload values.
+//
+// New does not check if the provided information is aligned with the specs.
+func NewMessage(tnf byte, rtype string, id string, payload []byte) *Message {
+	r := &Record{
+		TNF:     tnf,
+		Type:    rtype,
+		ID:      id,
+		Payload: makeRecordPayload(tnf, rtype, payload),
+	}
+	return &Message{
+		[]*Record{r},
+	}
+}
+
+// NewTextMessage returns a pointer to a Message with a single Record
+// of WellKnownType T[ext].
+func NewTextMessage(textVal, language string) *Message {
+	return &Message{
+		[]*Record{NewTextRecord(textVal, language)},
+	}
+}
+
+// NewURIMessage returns a pointer to a Message with a single Record
+// of WellKnownType U[RI].
+func NewURIMessage(uriVal string) *Message {
+	return &Message{
+		[]*Record{NewURIRecord(uriVal)},
+	}
 }
 
 // Reset clears the fields of a Message and puts them to their default values
 func (m *Message) Reset() {
-	m.records = []*Record{}
-	m.TNF = 0
-	m.ID = []byte{}
-	m.Payload = []byte{}
+	m.Records = []*Record{}
 }
 
-// Return a string with some information about the NDEF message.
-// For plain text, URIs and Absolute URIs it returns the the payload as string.
-// For everything else, it returns an explanatory line about the Message type.
+// Returns the string representation of each of the records in the message
 func (m *Message) String() string {
-	var str string
-	switch m.TNF {
-	case Empty:
-		str += fmt.Sprintf("Payload is EMPTY.")
-	case NFCForumWellKnownType:
-		switch string(m.Type) {
-		case "T": // Plain text
-			str += fmt.Sprint(string(m.Payload))
-		case "U": // URI
-			str += fmt.Sprintf("%s%s",
-				URIProtocols[m.Payload[0]],
-				string(m.Payload[1:]))
-		default:
-			str += fmt.Sprintf("Payload is a NFC Forum Well"+
-				"Known Type: %s", string(m.Type))
+	str := ""
+	last := len(m.Records) - 1
+	for i, r := range m.Records {
+		str += r.String()
+		if i != last {
+			str += "\n"
 		}
-	case MediaType: // as defined at https://www.ietf.org/rfc/rfc2046.txt
-		str += fmt.Sprintf("Payload is a media type: %s. ",
-			string(m.Type))
-	case AbsoluteURI: // as defined https://www.ietf.org/rfc/rfc3986.txt
-		str += fmt.Sprintln(string(m.Payload))
-	case NFCForumExternalType:
-		str += fmt.Sprintf("Payload is of type EXTERNAL.")
-	case Unknown:
-		str += fmt.Sprintf("Payload is of type UNKNOWN.")
-	case Unchanged:
-		str += fmt.Sprintf("Payload is of type UNCHANGED.")
-	case Reserved:
-		str += fmt.Sprintf("Payload is of type RESERVED.")
 	}
 	return str
 }
 
-// Unmarshal parses a byte slice into a Message. It will parse
-// each record until and including the  Message End Record. Then
-// it will assemble the Payload and set the TNF, Type, ID fields with
-// the correct information. The message is always reset before parsing.
+// Unmarshal parses a byte slice into a Message. This is done by
+// parsing all Records in the slice, until there are no more to parse.
+//
 //
 // Returns the number of bytes processed (message length), or an error
 // if something looks wrong with the message or its records.
-func (m *Message) Unmarshal(buf []byte) (int, error) {
+func (m *Message) Unmarshal(buf []byte) (rLen int, err error) {
 	m.Reset()
-	i := 0
-	for i < len(buf) {
+	rLen = 0
+	for rLen < len(buf) {
 		r := new(Record)
-		rLen, err := r.Unmarshal(buf[i:])
-		i += rLen
+		recordLen, err := r.Unmarshal(buf[rLen:])
+		rLen += recordLen
 		if err != nil {
-			return i, err
+			return rLen, err
 		}
-		m.records = append(m.records, r)
-		// With stop parsing with the end record
-		if r.ME {
-			break
-		}
+		m.Records = append(m.Records, r)
 	}
 
-	err := m.checkRecords()
-	if err != nil {
-		return i, err
-	}
-
-	firstRecord := m.records[0]
-	m.TNF = firstRecord.TNF
-	m.Type = firstRecord.Type
-	m.ID = firstRecord.ID
-
-	// The payload is the concatenation of the payloads in
-	// each record
-	var buffer bytes.Buffer
-	for _, r := range m.records {
-		buffer.Write(r.Payload)
-	}
-	m.Payload = buffer.Bytes()
-
-	// Clear the records. We do this because
-	// otherwise, if the Message is mutated,
-	// the Marshaling would be based off the original
-	// records, and the mutations would not happen, which
-	// would be really misleading.
-	m.records = []*Record{}
-
-	return i, nil
+	err = m.check()
+	return rLen, err
 }
 
-// Marshal provides the byte slice representation of a Message
-//
-// There are two ways this can happen. If there are any Records
-// (SetRecords() has been used on this Message),
-// the concatenation of the Marshal() for each record is provided.
-// Otherwise, a single record is produced from the Message fields
-// (TNF, Type, ID, Payload) and its Marshal() returned.
-//
-// This allows the possibility of creating an NDEF Message by either
-// setting/editing the fields of the Message struct, or by manually the
-// NDEF Record(s) with SetRecords().
+// Marshal provides the byte slice representation of a Message,
+// which is the concatenation of the Marshaling of each of its records.
 //
 // Returns an error if something goes wrong.
 func (m *Message) Marshal() ([]byte, error) {
-	if len(m.records) > 0 {
-		// We have records. Just concat their Bytes. But test first
-		if err := m.checkRecords(); err != nil {
+	err := m.check()
+	if err != nil {
+		return nil, err
+	}
+
+	var buffer bytes.Buffer
+	for _, r := range m.Records {
+		rBytes, err := r.Marshal()
+		if err != nil {
 			return nil, err
 		}
-		var buffer bytes.Buffer
-		for _, r := range m.records {
-			rBytes, err := r.Marshal()
-			if err != nil {
-				return nil, err
-			}
-			buffer.Write(rBytes)
-		}
-		return buffer.Bytes(), nil
+		buffer.Write(rBytes)
 	}
-
-	// We have no records.
-	// FIXME: Truncates when data > 4GB
-	tempRecord := new(Record)
-	tempRecord.MB = true
-	tempRecord.ME = true
-	tempRecord.CF = false
-	tempRecord.IL = len(m.ID) > 0
-	tempRecord.TypeLength = byte(len(m.Type))
-	tempRecord.Type = m.Type
-	tempRecord.IDLength = byte(len(m.ID))
-	tempRecord.ID = m.ID
-	tempRecord.TNF = m.TNF
-	payloadLen := len(m.Payload)
-	if payloadLen > 4294967295 { //2^32-1. 4GB message max.
-		payloadLen = 2 ^ 32 - 1
-	}
-	tempRecord.SR = payloadLen < 256 // Short record vs. Long
-	tempRecord.PayloadLength = uint64(payloadLen)
-
-	// FIXME: If payload is greater than 2^32 - 1
-	// we'll truncate without warning with this
-	tempRecord.Payload = m.Payload[:payloadLen]
-	tempMessage := new(Message)
-	tempMessage.SetRecords([]*Record{tempRecord})
-	return tempMessage.Marshal() // A message with 1 record
+	return buffer.Bytes(), nil
 }
 
-// Set some short-hands for the errors that can happen on checkRecords().
-const (
-	eNORECORDS     = "Message.checkRecords: No records"
-	eNOMB          = "Message.checkRecords: First record has not the MessageBegin flag set"
-	eFIRSTCHUNKED  = "Message.checkRecords: A single record cannot have the Chunk flag set"
-	eNOME          = "Message.checkRecords: Last record has not the MessageEnd flag set"
-	eLASTCHUNKED   = "Message.checkRecords: Last record cannot have the Chunk flag set"
-	eCFMISSING     = "Message.checkRecords: Chunk Flag missing from some records"
-	eBADIL         = "Message.checkRecords: IL flag is set on a middle or final chunk"
-	eBADTYPELENGTH = "Message.checkRecords: A middle or last chunk has TypeLength != 0"
-	eBADTNF        = "Message.checkRecords: A middle or last chunk TNF is not UNCHANGED"
-)
-
-// checkRecords performs checks which are inspired in the "2.5 NDEF Mechanisms
-// Test Requirements" section of the specification.
-//
-// Returns an error if the NDEF Message Records don't look good.
-func (m *Message) checkRecords() error {
-	records := m.records
-	recordsLen := len(records)
-	last := recordsLen - 1
-	if recordsLen == 0 {
-		return errors.New(eNORECORDS)
-	}
-	if !records[0].MB {
-		return errors.New(eNOMB)
-	}
-	if recordsLen == 1 && records[0].CF {
-		return errors.New(eFIRSTCHUNKED)
-	}
-	if !records[last].ME {
-		return errors.New(eNOME)
-	}
-	if records[0].CF && records[last].CF {
-		return errors.New(eLASTCHUNKED)
-	}
-
-	if recordsLen > 1 {
-		recordsWithoutCF := 0
-		recordsWithIL := 0
-		recordsWithTypeLength := 0
-		recordsWithoutUnchangedType := 0
-		for i, r := range records {
-			// Check CF in all but the last
-			if !r.CF && i != last {
-				recordsWithoutCF++
-			}
-			// Check IL in all but first
-			if r.IL && i != 0 {
-				recordsWithIL++
-			}
-			// TypeLength should be zero except in the first
-			if r.TypeLength > 0 && i != 0 {
-				recordsWithTypeLength++
-			}
-			// All but first chunk should have TNF to 0x06
-			if r.TNF != Unchanged && i != 0 {
-				recordsWithoutUnchangedType++
-			}
-		}
-		if recordsWithoutCF > 0 {
-			return errors.New(eCFMISSING)
-		}
-		if recordsWithIL > 0 {
-			return errors.New(eBADIL)
-		}
-		if recordsWithTypeLength > 0 {
-			return errors.New(eBADTYPELENGTH)
-		}
-		if recordsWithoutUnchangedType > 0 {
-			return errors.New(eBADTNF)
-		}
-	}
-	return nil
-}
-
-// SetRecords allows to manually set the private m.records field of a Message.
-//
-// This is useful for testing and for those who require to
-// produce a chunked NDEF Message. In this case, manual construction of
-// every record is necessary, along with a good read of the specification.
-//
-// SetRecords returns an error if records are not matching the specification
-// rules.
-func (m *Message) SetRecords(records []*Record) error {
-	prevRecords := m.records
-	m.records = records
-	if err := m.checkRecords(); err != nil {
-		m.records = prevRecords
-		return err
-	}
+func (m *Message) check() error {
 	return nil
 }

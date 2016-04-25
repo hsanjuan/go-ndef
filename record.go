@@ -21,161 +21,230 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"runtime"
+
+	"github.com/hsanjuan/go-ndef/types/wkt/text"
+	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
 
-// Record represents a NDEF Record, which is part of an NDEF Message.
-// Records follow some strict rules when they go together in a Message
-// (see the Message TestRecords()). Records can have two forms:
-// a ShortRecord (SR) only uses 1 byte for the Payload Length, but a regular
-// record uses 4 bytes instead.
+// Record represents a consolidated NDEF Record (assembled, non-chunked),
+// which is a part of an NDEF Message.
 type Record struct {
-	// First byte
-	MB            bool   // Message begin
-	ME            bool   // Message end
-	CF            bool   // Chunk Flag
-	SR            bool   // Short record
-	IL            bool   // ID length field present
-	TNF           byte   // Type name format (3 bits)
-	TypeLength    byte   // Type Length
-	IDLength      byte   // Length of the ID field
-	PayloadLength uint64 // Length of the Payload.
-	Type          []byte // Type of the payload. Must follow TNF
-	ID            []byte // Unique ID, only in MB record
-	Payload       []byte // Payload
+	TNF     byte          // Type name format (3 bits)
+	Type    string        // Type of the payload. Must follow TNF
+	ID      string        // An URI (per RFC 3986)
+	Payload RecordPayload // Payload
 }
 
 // Reset clears up all the fields of the Record and sets them to their
 // default values.
 func (r *Record) Reset() {
-	r.MB = false
-	r.ME = false
-	r.CF = false
-	r.SR = false
-	r.IL = false
 	r.TNF = 0
-	r.TypeLength = 0
-	r.IDLength = 0
-	r.PayloadLength = 0
-	r.Type = []byte{}
-	r.ID = []byte{}
-	r.Payload = []byte{}
+	r.Type = ""
+	r.ID = ""
+	r.Payload = nil
 }
 
-// Provide a string with information about this record.
-// Records' payload do not make sense without having compiled a whole Message
-// so they are not dealed with here.
-func (r *Record) String() string {
-	var str string
-	str += fmt.Sprintf("MB: %t | ME: %t | CF: %t | SR: %t | IL: %t | TNF: %d\n",
-		r.MB, r.ME, r.CF, r.SR, r.IL, r.TNF)
-	str += fmt.Sprintf("TypeLength: %d", r.TypeLength)
-	str += fmt.Sprintf(" | Type: %s\n", string(r.Type))
-	str += fmt.Sprintf("Record Payload Length: %d",
-		r.PayloadLength)
-	if r.IL {
-		str += fmt.Sprintf(" | IDLength: %d", r.IDLength)
-		str += fmt.Sprintf(" | ID: %x", bytesToUint64(r.ID))
+// NewTextRecord returns a pointer to a Record with a
+// Payload of Text [Well-Known] Type.
+func NewTextRecord(textVal, language string) *Record {
+	pl := text.New(textVal, language)
+	return &Record{
+		TNF:     NFCForumWellKnownType,
+		Type:    "T",
+		Payload: pl,
 	}
-	str += fmt.Sprintf("\n")
+}
+
+// NewURIRecord returns a pointer to a Record with a
+// Payload of URI [Well-Known] Type.
+func NewURIRecord(uriVal string) *Record {
+	pl := uri.New(uriVal)
+	return &Record{
+		TNF:     NFCForumWellKnownType,
+		Type:    "U",
+		Payload: pl,
+	}
+}
+
+// String a string representation of the payload of the record, prefixed
+// by the URN of the resource.
+//
+// Note that not all NDEF Payloads are supported, and that custom types/payloads
+// are considered not printable. In those cases, a generic RecordPayload is
+// used and an explanatory message is returned instead.
+// See submodules under "types/" for a list of supported types.
+func (r *Record) String() string {
+	return r.Payload.URN() + ":" + r.Payload.String()
+}
+
+// Inspect provides a string with information about this record.
+// For a String representation of the contents use String().
+func (r *Record) Inspect() string {
+	var str string
+	str += fmt.Sprintf("TNF: %d\n", r.TNF)
+	str += fmt.Sprintf("Type: %s\n", r.Type)
+	str += fmt.Sprintf("ID: %s\n", r.ID)
+	str += fmt.Sprintf("Payload Length: %d", r.Payload.Len())
 	return str
 }
 
-// Unmarshal parses a byte slice into a single Record struct (the slice can
+// Unmarshal parses a byte slice into a Record struct (the slice can
 // have extra bytes which are ignored). The Record is always reset before
 // parsing.
 //
+// It does this by parsing every record chunk until a MessageEnd chunk
+// is read. Then it consolidates the chunks into a single Record and sets
+// the TNF, Type and ID fields.
+//
 // Returns how many bytes were parsed from the slice (record length) or
 // an error if something went wrong.
-func (r *Record) Unmarshal(buf []byte) (rlen int, err error) {
-	// Handle errors that are produced by getByte() and getBytes()
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(runtime.Error); ok {
-				panic(r)
-			}
-			err = r.(error)
-			err = errors.New("Record.Unmarshal: " + err.Error())
-		}
-	}()
+func (r *Record) Unmarshal(buf []byte) (rLen int, err error) {
 	r.Reset()
-	bytesBuf := bytes.NewBuffer(buf)
-
-	firstByte := getByte(bytesBuf)
-	r.MB = (firstByte >> 7 & 0x1) == 1
-	r.ME = (firstByte >> 6 & 0x1) == 1
-	r.CF = (firstByte >> 5 & 0x1) == 1
-	r.SR = (firstByte >> 4 & 0x1) == 1
-	r.IL = (firstByte >> 3 & 0x1) == 1
-	r.TNF = firstByte & 0x7
-
-	r.TypeLength = getByte(bytesBuf)
-
-	if r.SR { //This is a short record
-		r.PayloadLength = uint64(getByte(bytesBuf))
-	} else { // Regular record
-		r.PayloadLength = bytesToUint64(getBytes(bytesBuf, 4))
+	rLen = 0
+	var chunks []*recordChunk
+	for rLen < len(buf) {
+		chunk := new(recordChunk)
+		chunkSize, err := chunk.Unmarshal(buf[rLen:])
+		rLen += chunkSize
+		if err != nil {
+			return rLen, err
+		}
+		chunks = append(chunks, chunk)
+		if chunk.ME {
+			break
+		}
 	}
-	if r.IL {
-		r.IDLength = getByte(bytesBuf)
+
+	err = checkChunks(chunks)
+	if err != nil {
+		return rLen, err
 	}
-	r.Type = getBytes(bytesBuf, int(r.TypeLength))
-	if r.IL {
-		r.ID = getBytes(bytesBuf, int(r.IDLength))
+
+	r.TNF = chunks[0].TNF
+	r.Type = chunks[0].Type
+	r.ID = chunks[0].ID
+
+	var buffer bytes.Buffer
+	for _, c := range chunks {
+		buffer.Write(c.Payload)
 	}
-	r.Payload = getBytes(bytesBuf, int(r.PayloadLength))
-	// Return the records length:
-	// length of original buffer - length of unread portion.
-	return len(buf) - bytesBuf.Len(), nil
+	payloadBytes := buffer.Bytes()
+	r.Payload = makeRecordPayload(r.TNF, r.Type, payloadBytes)
+
+	r.Payload.Unmarshal(payloadBytes)
+	err = r.check()
+	return rLen, err
 }
 
-// Marshal returns the byte representation of a Record, or an error
-// if something went wrong
+// Marshal returns the byte representation of a Record. It does this
+// by producing a single record chunk.
+//
+// Note that if the original Record was unmarshaled from many chunks,
+// the recovery is not possible anymore.
 func (r *Record) Marshal() ([]byte, error) {
-	var buffer bytes.Buffer
-	firstByte := byte(0)
-	if r.MB {
-		firstByte |= 0x1 << 7
+	err := r.check()
+	if err != nil {
+		return nil, err
 	}
-	if r.ME {
-		firstByte |= 0x1 << 6
-	}
-	if r.CF {
-		firstByte |= 0x1 << 5
-	}
-	if r.SR {
-		firstByte |= 0x1 << 4
-	}
-	if r.IL {
-		firstByte |= 0x1 << 3
-	}
-	firstByte |= (r.TNF & 0x7) //Last 3 bits are from TNF
-	buffer.WriteByte(firstByte)
-	// TypeLength byte
-	buffer.WriteByte(r.TypeLength)
+	tempChunk := new(recordChunk)
+	tempChunk.MB = true
+	tempChunk.ME = true
+	tempChunk.CF = false
+	tempChunk.IL = len(r.ID) > 0
+	tempChunk.TNF = r.TNF
+	tempChunk.TypeLength = byte(len([]byte(r.Type)))
+	tempChunk.Type = r.Type
+	tempChunk.IDLength = byte(len([]byte(r.ID)))
+	tempChunk.ID = r.ID
 
-	// Payload Length byte (for SR) or 4 bytes for the regular case
-	if r.SR {
-		buffer.WriteByte(byte(r.PayloadLength))
-	} else {
-		buffer.Write(uint64ToBytes(r.PayloadLength, 4))
+	rPayload := r.Payload.Marshal()
+	payloadLen := len(rPayload)
+
+	if payloadLen > 4294967295 { //2^32-1. 4GB message max.
+		payloadLen = 4294967295
+	}
+	tempChunk.SR = payloadLen < 256 // Short record vs. Long
+	tempChunk.PayloadLength = uint64(payloadLen)
+
+	// FIXME: If payload is greater than 2^32 - 1
+	// we'll truncate without warning with this
+	tempChunk.Payload = rPayload[:payloadLen]
+
+	rBytes, err := tempChunk.Marshal()
+	return rBytes, err
+}
+
+func (r *Record) check() error {
+	return nil
+}
+
+// Set some short-hands for the errors that can happen on checkChunks().
+const (
+	eNORECORDS     = "checkChunks: No records"
+	eNOMB          = "checkChunks: First record has not the MessageBegin flag set"
+	eFIRSTCHUNKED  = "checkChunks: A single record cannot have the Chunk flag set"
+	eNOME          = "checkChunks: Last record has not the MessageEnd flag set"
+	eLASTCHUNKED   = "checkChunks: Last record cannot have the Chunk flag set"
+	eCFMISSING     = "checkChunks: Chunk Flag missing from some records"
+	eBADIL         = "checkChunks: IL flag is set on a middle or final chunk"
+	eBADTYPELENGTH = "checkChunks: A middle or last chunk has TypeLength != 0"
+	eBADTNF        = "checkChunks: A middle or last chunk TNF is not UNCHANGED"
+)
+
+func checkChunks(chunks []*recordChunk) error {
+	chunksLen := len(chunks)
+	last := chunksLen - 1
+	if chunksLen == 0 {
+		return errors.New(eNORECORDS)
+	}
+	if !chunks[0].MB {
+		return errors.New(eNOMB)
+	}
+	if chunksLen == 1 && chunks[0].CF {
+		return errors.New(eFIRSTCHUNKED)
+	}
+	if !chunks[last].ME {
+		return errors.New(eNOME)
+	}
+	if chunks[0].CF && chunks[last].CF {
+		return errors.New(eLASTCHUNKED)
 	}
 
-	// ID Length byte if we are meant to have it
-	if r.IL {
-		buffer.WriteByte(r.IDLength)
+	if chunksLen > 1 {
+		chunksWithoutCF := 0
+		chunksWithIL := 0
+		chunksWithTypeLength := 0
+		chunksWithoutUnchangedType := 0
+		for i, r := range chunks {
+			// Check CF in all but the last
+			if !r.CF && i != last {
+				chunksWithoutCF++
+			}
+			// Check IL in all but first
+			if r.IL && i != 0 {
+				chunksWithIL++
+			}
+			// TypeLength should be zero except in the first
+			if r.TypeLength > 0 && i != 0 {
+				chunksWithTypeLength++
+			}
+			// All but first chunk should have TNF to 0x06
+			if r.TNF != Unchanged && i != 0 {
+				chunksWithoutUnchangedType++
+			}
+		}
+		if chunksWithoutCF > 0 {
+			return errors.New(eCFMISSING)
+		}
+		if chunksWithIL > 0 {
+			return errors.New(eBADIL)
+		}
+		if chunksWithTypeLength > 0 {
+			return errors.New(eBADTYPELENGTH)
+		}
+		if chunksWithoutUnchangedType > 0 {
+			return errors.New(eBADTNF)
+		}
 	}
-
-	// Write the type bytes if we have something
-	if r.TypeLength > 0 {
-		buffer.Write(r.Type)
-	}
-
-	// Write the ID bytes if we have something
-	if r.IL && r.IDLength > 0 {
-		buffer.Write(r.ID)
-	}
-
-	buffer.Write(r.Payload)
-	return buffer.Bytes(), nil
+	return nil
 }

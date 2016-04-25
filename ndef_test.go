@@ -17,13 +17,9 @@
 
 package ndef
 
-import (
-	"testing"
-)
-
-func TestURIProtocols(t *testing.T) {
-	for i := 0; i <= 36; i++ {
-		r := URIProtocols[byte(i)]
-		t.Logf("URIProtocols[%d] -> %s", i, r)
-	}
-}
+// func TestURIProtocols(t *testing.T) {
+// 	for i := 0; i <= 36; i++ {
+// 		r := URIProtocols[byte(i)]
+// 		t.Logf("URIProtocols[%d] -> %s", i, r)
+// 	}
+// }
