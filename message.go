@@ -17,7 +17,11 @@
 
 package ndef
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+	"strings"
+)
 
 // Message represents an NDEF Message, which is a collection of one or
 // more NDEF Records.
@@ -103,6 +107,23 @@ func (m *Message) String() string {
 		str += r.String()
 		if i != last {
 			str += "\n"
+		}
+	}
+	return str
+}
+
+// Returns a string with information about the message and its records.
+func (m *Message) Inspect() string {
+	str := fmt.Sprintf("NDEF Message with %d records.", len(m.Records))
+	if len(m.Records) > 0 {
+		str += "\n"
+		for i, r := range m.Records {
+			str += fmt.Sprintf("Record %d:\n", i)
+			rIns := r.Inspect()
+			rInsLines := strings.Split(rIns, "\n")
+			for _, l := range rInsLines {
+				str += "  " + l + "\n"
+			}
 		}
 	}
 	return str
