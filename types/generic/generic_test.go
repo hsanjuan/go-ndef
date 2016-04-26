@@ -27,15 +27,20 @@ func TestNew(t *testing.T) {
 	if !bytes.Equal(gen.Payload, []byte{0x00}) {
 		t.Error("The type should hold the given payload")
 	}
-	if gen.URN() != "urn:nfc:ext:go-ndef:generic" {
-		t.Error("Unexpected URN")
+	if gen.Type() != "go-ndef-generic" {
+		t.Error("Unexpected type name")
 	}
 }
 
 func TestString(t *testing.T) {
 	gen := New([]byte{0x00})
-	if gen.String() != "<Non standard type: contents not printable>" {
+	if gen.String() != "<The message contains a binary payload>" {
 		t.Error("Bad string generation")
+	}
+
+	gen = New([]byte{})
+	if gen.String() != "" {
+		t.Error("Expected an empty string")
 	}
 }
 

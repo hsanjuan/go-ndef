@@ -60,12 +60,42 @@ func NewURIMessage(uriVal string) *Message {
 	}
 }
 
-// Reset clears the fields of a Message and puts them to their default values
+// NewMediaMessage returns a pointer to a Message with a single Record
+// of Media (RFC-2046) type.
+//
+// mimeType is something like "text/json" or "image/jpeg".
+func NewMediaMessage(mimeType string, payload []byte) *Message {
+	return &Message{
+		[]*Record{NewMediaRecord(mimeType, payload)},
+	}
+}
+
+// NewAbsoluteURIMessage returns a pointer to a Message with a single Record
+// of AbsoluteURI type.
+//
+// AbsoluteURI means that the type of the payload for this record is
+// defined by an URI resource. It is not supposed to be used to
+// describe an URI. For that, use NewURIRecord().
+func NewAbsoluteURIMessage(typeURI string, payload []byte) *Message {
+	return &Message{
+		[]*Record{NewAbsoluteURIRecord(typeURI, payload)},
+	}
+}
+
+// NewExternalMessage returns a pointer to a Message with a single Record
+// of NFC Forum External type.
+func NewExternalMessage(extType string, payload []byte) *Message {
+	return &Message{
+		[]*Record{NewExternalRecord(extType, payload)},
+	}
+}
+
+// Reset clears the fields of a Message and puts them to their default values.
 func (m *Message) Reset() {
 	m.Records = []*Record{}
 }
 
-// Returns the string representation of each of the records in the message
+// Returns the string representation of each of the records in the message.
 func (m *Message) String() string {
 	str := ""
 	last := len(m.Records) - 1
@@ -80,7 +110,6 @@ func (m *Message) String() string {
 
 // Unmarshal parses a byte slice into a Message. This is done by
 // parsing all Records in the slice, until there are no more to parse.
-//
 //
 // Returns the number of bytes processed (message length), or an error
 // if something looks wrong with the message or its records.

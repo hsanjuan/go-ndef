@@ -98,8 +98,8 @@ func (u *Payload) String() string {
 	return URIProtocols[u.IdentCode] + u.URIField
 }
 
-// URN returns the Uniform Resource Name for URIs.
-func (u *Payload) URN() string {
+// Type returns the Uniform Resource Name for URIs.
+func (u *Payload) Type() string {
 	return "urn:nfc:wkt:U"
 }
 

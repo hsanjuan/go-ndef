@@ -34,8 +34,8 @@ type RecordPayload interface {
 	Marshal() []byte
 	// Provides de-serialization for the Payload
 	Unmarshal(buf []byte)
-	// Returns an Unified Resource Name for the Payload Type
-	URN() string
+	// Returns a string indetifying the type of this payload
+	Type() string
 	// Returns the length of the Payload (serialized)
 	Len() int
 }

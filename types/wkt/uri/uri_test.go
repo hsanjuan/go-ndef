@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 	if u.URIField != "something.com" {
 		t.Error("Bad removal of the protocol in New")
 	}
-	if u.URN() != "urn:nfc:wkt:U" {
+	if u.Type() != "urn:nfc:wkt:U" {
 		t.Error("Unexpected URN")
 	}
 }

@@ -22,6 +22,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/hsanjuan/go-ndef/types/absoluteuri"
+	"github.com/hsanjuan/go-ndef/types/ext"
+	"github.com/hsanjuan/go-ndef/types/media"
 	"github.com/hsanjuan/go-ndef/types/wkt/text"
 	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
@@ -66,6 +69,45 @@ func NewURIRecord(uriVal string) *Record {
 	}
 }
 
+// NewMediaRecord returns a pointer to a Record with a
+// Media type (per RFC-2046) as payload.
+//
+// mimeType is something like "text/json" or "image/jpeg".
+func NewMediaRecord(mimeType string, payload []byte) *Record {
+	pl := media.New(mimeType, payload)
+	return &Record{
+		TNF:     MediaType,
+		Type:    mimeType,
+		Payload: pl,
+	}
+}
+
+// NewAbsoluteURIRecord returns a pointer to a Record with a
+// Payload of Absolute URI type.
+//
+// AbsoluteURI means that the type of the payload for this record is
+// defined by an URI resource. It is not supposed to be used to
+// describe an URI. For that, use NewURIRecord().
+func NewAbsoluteURIRecord(typeURI string, payload []byte) *Record {
+	pl := absoluteuri.New(typeURI, payload)
+	return &Record{
+		TNF:     AbsoluteURI,
+		Type:    typeURI,
+		Payload: pl,
+	}
+}
+
+// NewExternalRecord returns a pointer to a Record with a
+// Payload of NFC Forum external type.
+func NewExternalRecord(extType string, payload []byte) *Record {
+	pl := ext.New(extType, payload)
+	return &Record{
+		TNF:     NFCForumExternalType,
+		Type:    extType,
+		Payload: pl,
+	}
+}
+
 // String a string representation of the payload of the record, prefixed
 // by the URN of the resource.
 //
@@ -74,7 +116,7 @@ func NewURIRecord(uriVal string) *Record {
 // used and an explanatory message is returned instead.
 // See submodules under "types/" for a list of supported types.
 func (r *Record) String() string {
-	return r.Payload.URN() + ":" + r.Payload.String()
+	return r.Payload.Type() + ":" + r.Payload.String()
 }
 
 // Inspect provides a string with information about this record.
