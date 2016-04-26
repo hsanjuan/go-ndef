@@ -21,7 +21,7 @@ package media
 
 // Payload is a wrapper to store a Payload
 type Payload struct {
-	mimeType string
+	MimeType string
 	Payload  []byte
 }
 
@@ -29,7 +29,7 @@ type Payload struct {
 // given type.
 func New(mimeType string, payload []byte) *Payload {
 	return &Payload{
-		mimeType: mimeType,
+		MimeType: mimeType,
 		Payload:  payload,
 	}
 }
@@ -45,7 +45,7 @@ func (media *Payload) String() string {
 
 // Type returns the mime type of this payload.
 func (media *Payload) Type() string {
-	return media.mimeType
+	return media.MimeType
 }
 
 // Marshal returns the bytes representing the payload

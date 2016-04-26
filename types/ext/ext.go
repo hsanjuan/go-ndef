@@ -21,7 +21,7 @@ package ext
 
 // Payload is a wrapper to store a Payload
 type Payload struct {
-	extType string
+	ExtType string
 	Payload []byte
 }
 
@@ -29,7 +29,7 @@ type Payload struct {
 // given type.
 func New(extType string, payload []byte) *Payload {
 	return &Payload{
-		extType: extType,
+		ExtType: extType,
 		Payload: payload,
 	}
 }
@@ -45,7 +45,7 @@ func (extT *Payload) String() string {
 
 // Type returns a readable type name for this payload.
 func (extT *Payload) Type() string {
-	return "urn:nfc:ext:" + extT.extType
+	return "urn:nfc:ext:" + extT.ExtType
 }
 
 // Marshal returns the bytes representing the payload

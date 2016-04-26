@@ -21,7 +21,7 @@ package absoluteuri
 
 // Payload is a wrapper to store a Payload
 type Payload struct {
-	uriType string
+	UriType string
 	Payload []byte
 }
 
@@ -29,7 +29,7 @@ type Payload struct {
 // given type.
 func New(uriType string, payload []byte) *Payload {
 	return &Payload{
-		uriType: uriType,
+		UriType: uriType,
 		Payload: payload,
 	}
 }
@@ -45,7 +45,7 @@ func (absu *Payload) String() string {
 
 // Type returns the URI defining the type for this payload
 func (absu *Payload) Type() string {
-	return absu.uriType
+	return absu.UriType
 }
 
 // Marshal returns the bytes representing the payload
