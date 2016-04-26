@@ -18,7 +18,10 @@
 package ndef
 
 import (
+	"github.com/hsanjuan/go-ndef/types/absoluteuri"
+	"github.com/hsanjuan/go-ndef/types/ext"
 	"github.com/hsanjuan/go-ndef/types/generic"
+	"github.com/hsanjuan/go-ndef/types/media"
 	"github.com/hsanjuan/go-ndef/types/wkt/text"
 	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
@@ -34,8 +37,8 @@ type RecordPayload interface {
 	Marshal() []byte
 	// Provides de-serialization for the Payload
 	Unmarshal(buf []byte)
-	// Returns an Unified Resource Name for the Payload Type
-	URN() string
+	// Returns a string indetifying the type of this payload
+	Type() string
 	// Returns the length of the Payload (serialized)
 	Len() int
 }
@@ -52,6 +55,12 @@ func makeRecordPayload(tnf byte, rtype string, payload []byte) RecordPayload {
 		default:
 			r = new(generic.Payload)
 		}
+	case MediaType:
+		r = media.New(rtype, nil)
+	case NFCForumExternalType:
+		r = ext.New(rtype, nil)
+	case AbsoluteURI:
+		r = absoluteuri.New(rtype, nil)
 	default:
 		r = new(generic.Payload)
 	}

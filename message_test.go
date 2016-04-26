@@ -50,6 +50,28 @@ func ExampleMessage_Unmarshal() {
 	// urn:nfc:wkt:T:This is a message of T[ext] type
 }
 
+func TestInspect(t *testing.T) {
+	ndefMessage := NewMediaMessage("text/plain", []byte("abc"))
+	t.Log(ndefMessage.Inspect())
+}
+
+func TestTypes(t *testing.T) {
+	ndefMessage := NewTextMessage("abc", "en_US")
+	t.Log(ndefMessage)
+
+	ndefMessage = NewURIMessage("http://a.b")
+	t.Log(ndefMessage)
+
+	ndefMessage = NewMediaMessage("text/json", []byte(`{ "a" : 3 }`))
+	t.Log(ndefMessage)
+
+	ndefMessage = NewAbsoluteURIMessage("http://a.b", []byte("payload"))
+	t.Log(ndefMessage)
+
+	ndefMessage = NewExternalMessage("exttype", []byte("payload"))
+	t.Log(ndefMessage)
+}
+
 func TestMarhsal(t *testing.T) {
 	m := NewURIMessage("http://s.com")
 	mBytes, err := m.Marshal()

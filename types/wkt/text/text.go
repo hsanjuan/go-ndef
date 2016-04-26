@@ -57,8 +57,8 @@ func (t *Payload) String() string {
 	return t.Text
 }
 
-// URN returns the Uniform Resource Name for Text types.
-func (t *Payload) URN() string {
+// Type returns the URN for Text types.
+func (t *Payload) Type() string {
 	return "urn:nfc:wkt:T"
 }
 
