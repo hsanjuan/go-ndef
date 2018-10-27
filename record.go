@@ -200,13 +200,13 @@ func (r *Record) Marshal() ([]byte, error) {
 	tempChunk.ID = r.ID
 
 	rPayload := r.Payload.Marshal()
-	payloadLen := len(rPayload)
+	payloadLen := uint64(len(rPayload))
 
 	if payloadLen > 4294967295 { //2^32-1. 4GB message max.
 		payloadLen = 4294967295
 	}
 	tempChunk.SR = payloadLen < 256 // Short record vs. Long
-	tempChunk.PayloadLength = uint64(payloadLen)
+	tempChunk.PayloadLength = payloadLen
 
 	// FIXME: If payload is greater than 2^32 - 1
 	// we'll truncate without warning with this
