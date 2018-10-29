@@ -1,9 +1,9 @@
 Go-ndef
 =======
 
-| Master/stable | Unstable | Reference |
-|:-------------:|:--------:|:---------:|
-| [![Build Status](https://travis-ci.org/hsanjuan/go-ndef.svg?branch=master)](https://travis-ci.org/hsanjuan/go-ndef) [![Coverage Status](https://coveralls.io/repos/github/hsanjuan/go-ndef/badge.svg?branch=master)](https://coveralls.io/github/hsanjuan/go-ndef?branch=master) | [![Build Status](https://travis-ci.org/hsanjuan/go-ndef.svg?branch=unstable)](https://travis-ci.org/hsanjuan/go-ndef) [![Coverage Status](https://coveralls.io/repos/github/hsanjuan/go-ndef/badge.svg?branch=unstable)](https://coveralls.io/github/hsanjuan/go-ndef?branch=unstable) | [![GoDoc](https://godoc.org/github.com/hsanjuan/go-ndef?status.svg)](http://godoc.org/github.com/hsanjuan/go-ndef) |
+[![Build Status](https://travis-ci.org/hsanjuan/go-ndef.svg?branch=master)](https://travis-ci.org/hsanjuan/go-ndef)
+[![Coverage Status](https://coveralls.io/repos/github/hsanjuan/go-ndef/badge.svg?branch=master)](https://coveralls.io/github/hsanjuan/go-ndef?branch=master)
+[![GoDoc](https://godoc.org/github.com/hsanjuan/go-ndef?status.svg)](http://godoc.org/github.com/hsanjuan/go-ndef)
 
 A Go implementation of the NFC Data Exchange Format (NDEF) specification, Version 1.0.
 
