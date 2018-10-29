@@ -1,0 +1,16 @@
+{
+  "author": "hsanjuan",
+  "bugs": {
+    "url": "https://github.com/hsanjuan/go-ndef"
+  },
+  "gx": {
+    "dvcsimport": "github.com/hsanjuan/go-ndef"
+  },
+  "gxVersion": "0.14.0",
+  "language": "go",
+  "license": "LGPL-3.0",
+  "name": "go-ndef",
+  "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
+  "version": "0.0.0"
+}
+
