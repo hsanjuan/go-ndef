@@ -162,10 +162,28 @@ func (m *Message) Marshal() ([]byte, error) {
 	}
 
 	var buffer bytes.Buffer
-	for _, r := range m.Records {
+	for i, r := range m.Records {
+		messageBeginFlag := false
+		messageEndFlag := false
 		rBytes, err := r.Marshal()
 		if err != nil {
 			return nil, err
+		}
+		if i == 0 {
+			messageBeginFlag = true
+		}
+		if i == (len(m.Records) - 1) {
+			messageEndFlag = true
+		}
+		//set MB and ME flags to false
+		rBytes[0] = rBytes[0] & 0x3F
+		if messageBeginFlag {
+			//set MB flag to true
+			rBytes[0] = rBytes[0] | 0x80
+		}
+		if messageEndFlag {
+			//set ME flag to true
+			rBytes[0] = rBytes[0] | 0x40
 		}
 		buffer.Write(rBytes)
 	}
