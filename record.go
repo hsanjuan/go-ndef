@@ -267,13 +267,17 @@ func checkChunks(chunks []*recordChunk) error {
 				chunksWithIL++
 			}
 			// TypeLength should be zero except in the first
-			if r.TypeLength > 0 && i != 0 {
-				chunksWithTypeLength++
-			}
+			/*
+				if r.TypeLength > 0 && i != 0 {
+					chunksWithTypeLength++
+				}
+			*/
 			// All but first chunk should have TNF to 0x06
-			if r.TNF != Unchanged && i != 0 {
-				chunksWithoutUnchangedType++
-			}
+			/*
+				if r.TNF != Unchanged && i != 0 {
+					chunksWithoutUnchangedType++
+				}
+			*/
 		}
 		if chunksWithoutCF > 0 {
 			return errors.New(eCFMISSING)
