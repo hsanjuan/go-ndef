@@ -259,9 +259,9 @@ func checkChunks(chunks []*recordChunk) error {
 		chunksWithoutUnchangedType := 0
 		for i, r := range chunks {
 			// Check CF in all but the last
-			if !r.CF && i != last {
+			/*if !r.CF && i != last {
 				chunksWithoutCF++
-			}
+			}*/
 			// Check IL in all but first
 			if r.IL && i != 0 {
 				chunksWithIL++
