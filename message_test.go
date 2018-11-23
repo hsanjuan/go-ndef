@@ -21,13 +21,14 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+
+	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
 
 func ExampleMessage() {
-	// Here we create a Message of type "U" (URI).
-	// Note that the first byte of the payload is dedicated to encode the
-	// URI Protocol
-	ndefMessage := NewMessage(NFCForumWellKnownType, "U", "", []byte("\x04github.com/hsanjuan/go-ndef"))
+	// Here we create an NDEF Message of type "U" (URI).
+	payload := uri.New("https://github.com/hsanjuan/go-ndef")
+	ndefMessage := NewMessage(NFCForumWellKnownType, "U", "", payload)
 	fmt.Println(ndefMessage)
 	// Output:
 	// urn:nfc:wkt:U:https://github.com/hsanjuan/go-ndef

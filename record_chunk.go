@@ -60,6 +60,35 @@ func (r *recordChunk) Reset() {
 	r.Payload = []byte{}
 }
 
+// New returns a single RecordChunk with the given options. This chunk can be
+// used directly to make a single-chunk NDEF Record on a single-record NDEF
+// message: the MB and ME fields are set to true.
+func newChunk(tnf byte, typ string, id string, payload []byte) *recordChunk {
+	chunk := &recordChunk{}
+	chunk.Reset()
+	chunk.MB = true        // Message-begin
+	chunk.ME = true        // Message-end
+	chunk.CF = false       // not chunked
+	chunk.IL = len(id) > 0 // only if ID field present
+	chunk.TNF = tnf
+	chunk.TypeLength = byte(len([]byte(typ)))
+	chunk.Type = typ
+	chunk.IDLength = byte(len([]byte(id)))
+	chunk.ID = id
+
+	payloadLen := uint64(len(payload))
+	if payloadLen > 4294967295 { //2^32-1. 4GB message max.
+		payloadLen = 4294967295
+	}
+	chunk.SR = payloadLen < 256 // Short record vs. Long
+	chunk.PayloadLength = payloadLen
+
+	// FIXME: If payload is greater than 2^32 - 1
+	// we'll truncate without warning.
+	chunk.Payload = payload[:payloadLen]
+	return chunk
+}
+
 // Provide a string with information about this record chunk.
 // Records' payload do not make sense without having compiled a whole Record
 // so they are not dealed with here.
@@ -124,7 +153,7 @@ func (r *recordChunk) Unmarshal(buf []byte) (rLen int, err error) {
 	r.Payload = getBytes(bytesBuf, int(r.PayloadLength))
 
 	rLen = len(buf) - bytesBuf.Len()
-	err = r.check()
+	err = r.Check()
 	if err != nil {
 		return rLen, err
 	}
@@ -134,7 +163,7 @@ func (r *recordChunk) Unmarshal(buf []byte) (rLen int, err error) {
 // Marshal returns the byte representation of a Record, or an error
 // if something went wrong
 func (r *recordChunk) Marshal() ([]byte, error) {
-	err := r.check()
+	err := r.Check()
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +215,8 @@ func (r *recordChunk) Marshal() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (r *recordChunk) check() error {
+// Check verifies that fields in this chunk are not in violation of the spec.
+func (r *recordChunk) Check() error {
 	// If the TNF value is 0x00, the TYPE_LENGTH, ID_LENGTH,
 	// and PAYLOAD_LENGTH fields MUST be zero and the TYPE, ID,
 	// and PAYLOAD fields MUST be omitted from the record.
