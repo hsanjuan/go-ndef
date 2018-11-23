@@ -52,6 +52,8 @@ func makeRecordPayload(tnf byte, rtype string, payload []byte) RecordPayload {
 			r = new(uri.Payload)
 		case "T":
 			r = new(text.Payload)
+		case "Sp":
+			r = new(SmartPosterPayload)
 		default:
 			r = new(generic.Payload)
 		}

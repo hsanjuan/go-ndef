@@ -34,6 +34,20 @@ func ExampleMessage() {
 	// urn:nfc:wkt:U:https://github.com/hsanjuan/go-ndef
 }
 
+func ExampleSmartPoster() {
+	// Here we create a SmartPoster Message with a title and a URL.
+	// A SmartPoster wraps an NDEF Message with several records.
+	title := NewTextRecord("The title", "en")
+	url := NewURIRecord("https://github.com/hsanjuan/go-ndef")
+	posterPayload := NewMessageFromRecords(title, url)
+	poster := NewSmartPosterMessage(posterPayload)
+	fmt.Println(poster)
+	// Output:
+	// urn:nfc:wkt:Sp:
+	// urn:nfc:wkt:T:The title
+	// urn:nfc:wkt:U:https://github.com/hsanjuan/go-ndef
+}
+
 func ExampleMessage_Unmarshal() {
 	ndefMessageBytes := []byte{0xd1, 0x01, 0x23, 0x54, 0x02, 0x65, 0x6e,
 		0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20,
@@ -71,6 +85,9 @@ func TestTypes(t *testing.T) {
 
 	ndefMessage = NewExternalMessage("exttype", []byte("payload"))
 	t.Log(ndefMessage)
+
+	ndefMessage2 := NewSmartPosterMessage(ndefMessage)
+	t.Log(ndefMessage2)
 }
 
 func TestMarhsal(t *testing.T) {

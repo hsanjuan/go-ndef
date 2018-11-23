@@ -33,7 +33,7 @@ type Message struct {
 	Records []*Record
 }
 
-// NewMessage returns a pointer to a Message initialized with a single Record
+// NewMessage returns a new Message initialized with a single Record
 // with the TNF, Type, ID and Payload values.
 func NewMessage(tnf byte, rtype string, id string, payload RecordPayload) *Message {
 	return &Message{
@@ -41,7 +41,31 @@ func NewMessage(tnf byte, rtype string, id string, payload RecordPayload) *Messa
 	}
 }
 
-// NewTextMessage returns a pointer to a Message with a single Record
+// NewMessageFromRecords returns a new Message containing several NDEF
+// Records. The MB and ME flags for the records are adjusted to
+// create a valid message.
+func NewMessageFromRecords(records ...*Record) *Message {
+	n := len(records)
+	if n == 0 {
+		return &Message{}
+	}
+
+	last := n - 1
+
+	for _, r := range records {
+		r.SetMB(false)
+		r.SetME(false)
+	}
+
+	records[0].SetMB(true)
+	records[last].SetME(true)
+
+	return &Message{
+		Records: records,
+	}
+}
+
+// NewTextMessage returns a new Message with a single Record
 // of WellKnownType T[ext].
 func NewTextMessage(textVal, language string) *Message {
 	return &Message{
@@ -49,7 +73,7 @@ func NewTextMessage(textVal, language string) *Message {
 	}
 }
 
-// NewURIMessage returns a pointer to a Message with a single Record
+// NewURIMessage returns a new Message with a single Record
 // of WellKnownType U[RI].
 func NewURIMessage(uriVal string) *Message {
 	return &Message{
@@ -57,7 +81,15 @@ func NewURIMessage(uriVal string) *Message {
 	}
 }
 
-// NewMediaMessage returns a pointer to a Message with a single Record
+// NewSmartPosterMessage returns a new Message with a single Record
+// of WellKnownType Sp (Smart Poster).
+func NewSmartPosterMessage(msgPayload *Message) *Message {
+	return &Message{
+		[]*Record{NewSmartPosterRecord(msgPayload)},
+	}
+}
+
+// NewMediaMessage returns a new Message with a single Record
 // of Media (RFC-2046) type.
 //
 // mimeType is something like "text/json" or "image/jpeg".
@@ -67,7 +99,7 @@ func NewMediaMessage(mimeType string, payload []byte) *Message {
 	}
 }
 
-// NewAbsoluteURIMessage returns a pointer to a Message with a single Record
+// NewAbsoluteURIMessage returns a new Message with a single Record
 // of AbsoluteURI type.
 //
 // AbsoluteURI means that the type of the payload for this record is
@@ -79,7 +111,7 @@ func NewAbsoluteURIMessage(typeURI string, payload []byte) *Message {
 	}
 }
 
-// NewExternalMessage returns a pointer to a Message with a single Record
+// NewExternalMessage returns a new Message with a single Record
 // of NFC Forum External type.
 func NewExternalMessage(extType string, payload []byte) *Message {
 	return &Message{

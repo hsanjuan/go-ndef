@@ -136,7 +136,7 @@ func (r *Record) SetME(b bool) {
 	r.chunks[len(r.chunks)-1].ME = b
 }
 
-// NewTextRecord returns a pointer to a Record with a
+// NewTextRecord returns a new Record with a
 // Payload of Text [Well-Known] Type.
 func NewTextRecord(textVal, language string) *Record {
 	pl := text.New(textVal, language).Marshal()
@@ -152,7 +152,7 @@ func NewTextRecord(textVal, language string) *Record {
 	}
 }
 
-// NewURIRecord returns a pointer to a Record with a
+// NewURIRecord returns a new Record with a
 // Payload of URI [Well-Known] Type.
 func NewURIRecord(uriVal string) *Record {
 	pl := uri.New(uriVal).Marshal()
@@ -168,7 +168,23 @@ func NewURIRecord(uriVal string) *Record {
 	}
 }
 
-// NewMediaRecord returns a pointer to a Record with a
+// NewSmartPosterRecord creates a new Record representing a Smart Poster.
+// The Payload of a Smart Poster is an NDEF Message.
+func NewSmartPosterRecord(msg *Message) *Record {
+	pl := NewSmartPosterPayload(msg).Marshal()
+	chunk := newChunk(
+		NFCForumWellKnownType,
+		"Sp",
+		"",
+		pl,
+	)
+
+	return &Record{
+		chunks: []*recordChunk{chunk},
+	}
+}
+
+// NewMediaRecord returns a new Record with a
 // Media type (per RFC-2046) as payload.
 //
 // mimeType is something like "text/json" or "image/jpeg".
@@ -187,7 +203,7 @@ func NewMediaRecord(mimeType string, payload []byte) *Record {
 	}
 }
 
-// NewAbsoluteURIRecord returns a pointer to a Record with a
+// NewAbsoluteURIRecord returns a new Record with a
 // Payload of Absolute URI type.
 //
 // AbsoluteURI means that the type of the payload for this record is
@@ -208,7 +224,7 @@ func NewAbsoluteURIRecord(typeURI string, payload []byte) *Record {
 	}
 }
 
-// NewExternalRecord returns a pointer to a Record with a
+// NewExternalRecord returns a new Record with a
 // Payload of NFC Forum external type.
 func NewExternalRecord(extType string, payload []byte) *Record {
 	pl := ext.New(extType, payload).Marshal()
