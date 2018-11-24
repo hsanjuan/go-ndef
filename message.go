@@ -132,7 +132,7 @@ func (m *Message) String() string {
 	return str
 }
 
-// Returns a string with information about the message and its records.
+// Inspect returns a string with information about the message and its records.
 func (m *Message) Inspect() string {
 	str := fmt.Sprintf("NDEF Message with %d records.", len(m.Records))
 	if len(m.Records) > 0 {

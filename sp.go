@@ -19,7 +19,7 @@ package ndef
 
 // Unfortunately splitting this to its own package causes a hard to break cycle.
 
-// Payload represents the Payload of a Smart Poster, which is
+// SmartPosterPayload represents the Payload of a Smart Poster, which is
 // an NDEF Message with one or multiple records.
 type SmartPosterPayload struct {
 	Message *Message

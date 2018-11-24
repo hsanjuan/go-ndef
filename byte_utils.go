@@ -81,7 +81,7 @@ func getBytes(b *bytes.Buffer, n int) []byte {
 	slice := make([]byte, n)
 	nread, err := b.Read(slice)
 	if err != nil || nread != n {
-		panic(errors.New("Unexpected end of data."))
+		panic(errors.New("unexpected end of data"))
 	}
 	return slice
 }
@@ -90,7 +90,7 @@ func getBytes(b *bytes.Buffer, n int) []byte {
 func getByte(b *bytes.Buffer) byte {
 	byte, err := b.ReadByte()
 	if err != nil {
-		panic(errors.New("Unexpected end of data"))
+		panic(errors.New("unexpected end of data"))
 	}
 	return byte
 }

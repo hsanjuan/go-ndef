@@ -30,13 +30,13 @@ import (
 )
 
 // A Record is an NDEF Record. Multiple records can be
-// part of NDEF Message.
+// part of a single NDEF Message.
 type Record struct {
 	chunks []*recordChunk
 }
 
 // NewRecord returns a single-chunked record with the given options.
-// Use generic.Payload if you want to use a custom byte-slice for payload.
+// Use a generic.Payload if you want to use a custom byte-slice for payload.
 func NewRecord(tnf byte, typ string, id string, payload RecordPayload) *Record {
 	var payloadBytes []byte
 	if payload != nil {
@@ -78,9 +78,8 @@ func (r *Record) ID() string {
 	return r.chunks[0].ID
 }
 
-// Payload returns the RecordPayload representation of the binary payload
-// wrapping the binary payload of the record, if supported
-// by this library. Otherwise a "generic" payload is returned.
+// Payload returns the RecordPayload for this record. It will use
+// one of the supported types, or otherwise a generic.Payload.
 func (r *Record) Payload() (RecordPayload, error) {
 	if r.Empty() {
 		return nil, errors.New("empty record")
@@ -139,49 +138,22 @@ func (r *Record) SetME(b bool) {
 // NewTextRecord returns a new Record with a
 // Payload of Text [Well-Known] Type.
 func NewTextRecord(textVal, language string) *Record {
-	pl := text.New(textVal, language).Marshal()
-	chunk := newChunk(
-		NFCForumWellKnownType,
-		"T",
-		"",
-		pl,
-	)
-
-	return &Record{
-		chunks: []*recordChunk{chunk},
-	}
+	pl := text.New(textVal, language)
+	return NewRecord(NFCForumWellKnownType, "T", "", pl)
 }
 
 // NewURIRecord returns a new Record with a
 // Payload of URI [Well-Known] Type.
 func NewURIRecord(uriVal string) *Record {
-	pl := uri.New(uriVal).Marshal()
-	chunk := newChunk(
-		NFCForumWellKnownType,
-		"U",
-		"",
-		pl,
-	)
-
-	return &Record{
-		chunks: []*recordChunk{chunk},
-	}
+	pl := uri.New(uriVal)
+	return NewRecord(NFCForumWellKnownType, "U", "", pl)
 }
 
 // NewSmartPosterRecord creates a new Record representing a Smart Poster.
 // The Payload of a Smart Poster is an NDEF Message.
 func NewSmartPosterRecord(msg *Message) *Record {
-	pl := NewSmartPosterPayload(msg).Marshal()
-	chunk := newChunk(
-		NFCForumWellKnownType,
-		"Sp",
-		"",
-		pl,
-	)
-
-	return &Record{
-		chunks: []*recordChunk{chunk},
-	}
+	pl := NewSmartPosterPayload(msg)
+	return NewRecord(NFCForumWellKnownType, "Sp", "", pl)
 }
 
 // NewMediaRecord returns a new Record with a
@@ -189,18 +161,8 @@ func NewSmartPosterRecord(msg *Message) *Record {
 //
 // mimeType is something like "text/json" or "image/jpeg".
 func NewMediaRecord(mimeType string, payload []byte) *Record {
-	pl := media.New(mimeType, payload).Marshal()
-
-	chunk := newChunk(
-		MediaType,
-		mimeType,
-		"",
-		pl,
-	)
-
-	return &Record{
-		chunks: []*recordChunk{chunk},
-	}
+	pl := media.New(mimeType, payload)
+	return NewRecord(MediaType, mimeType, "", pl)
 }
 
 // NewAbsoluteURIRecord returns a new Record with a
@@ -210,35 +172,15 @@ func NewMediaRecord(mimeType string, payload []byte) *Record {
 // defined by an URI resource. It is not supposed to be used to
 // describe an URI. For that, use NewURIRecord().
 func NewAbsoluteURIRecord(typeURI string, payload []byte) *Record {
-	pl := absoluteuri.New(typeURI, payload).Marshal()
-
-	chunk := newChunk(
-		AbsoluteURI,
-		typeURI,
-		"",
-		pl,
-	)
-
-	return &Record{
-		chunks: []*recordChunk{chunk},
-	}
+	pl := absoluteuri.New(typeURI, payload)
+	return NewRecord(AbsoluteURI, typeURI, "", pl)
 }
 
 // NewExternalRecord returns a new Record with a
 // Payload of NFC Forum external type.
 func NewExternalRecord(extType string, payload []byte) *Record {
-	pl := ext.New(extType, payload).Marshal()
-
-	chunk := newChunk(
-		NFCForumExternalType,
-		extType,
-		"",
-		pl,
-	)
-
-	return &Record{
-		chunks: []*recordChunk{chunk},
-	}
+	pl := ext.New(extType, payload)
+	return NewRecord(NFCForumExternalType, extType, "", pl)
 }
 
 // String a string representation of the payload of the record, prefixed
