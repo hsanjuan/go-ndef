@@ -1,5 +1,5 @@
 /***
-    Copyright (c) 2016, Hector Sanjuan
+    Copyright (c) 2018, Hector Sanjuan
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,7 @@ package absoluteuri
 
 // Payload is a wrapper to store a Payload
 type Payload struct {
-	UriType string
+	URIType string
 	Payload []byte
 }
 
@@ -29,7 +29,7 @@ type Payload struct {
 // given type.
 func New(uriType string, payload []byte) *Payload {
 	return &Payload{
-		UriType: uriType,
+		URIType: uriType,
 		Payload: payload,
 	}
 }
@@ -45,7 +45,7 @@ func (absu *Payload) String() string {
 
 // Type returns the URI defining the type for this payload
 func (absu *Payload) Type() string {
-	return absu.UriType
+	return absu.URIType
 }
 
 // Marshal returns the bytes representing the payload

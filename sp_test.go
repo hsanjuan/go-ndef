@@ -15,55 +15,51 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-package generic
+package ndef
 
 import (
 	"bytes"
 	"testing"
 )
 
-func TestNew(t *testing.T) {
-	gen := New([]byte{0x00})
-	if !bytes.Equal(gen.Payload, []byte{0x00}) {
-		t.Error("The type should hold the given payload")
-	}
-	if gen.Type() != "go-ndef-generic" {
-		t.Error("Unexpected type name")
+func TestNewSmartPosterPayload(t *testing.T) {
+	msg := NewTextMessage("hi", "en")
+	sp := NewSmartPosterPayload(msg)
+	if sp.Type() != "urn:nfc:wkt:Sp" {
+		t.Error("Expected URN")
 	}
 }
 
 func TestString(t *testing.T) {
-	gen := New([]byte{0x00})
-	if gen.String() != "<The message contains a binary payload>" {
+	msg := NewTextMessage("hi", "en")
+	sp := NewSmartPosterPayload(msg)
+	if sp.String() != "\nurn:nfc:wkt:T:hi" {
 		t.Error("Bad string generation")
-	}
-
-	gen = New([]byte{})
-	if gen.String() != "" {
-		t.Error("Expected an empty string")
 	}
 }
 
 func TestMarshal(t *testing.T) {
-	gen := New([]byte{0x04})
-	pl := gen.Marshal()
-	if !bytes.Equal(pl, []byte{0x04}) {
+	msg := NewURIMessage("http://www.nfc-forum.org")
+	sp := NewSmartPosterPayload(msg)
+	pl := sp.Marshal()
+	if !bytes.Equal(pl, []byte{0xD1, 0x01, 0x0E, 'U', 0x01, 'n', 'f', 'c', '-', 'f', 'o', 'r', 'u', 'm', '.', 'o', 'r', 'g'}) {
 		t.Error("Bad payload generation")
 	}
 }
 
 func TestUnmarshal(t *testing.T) {
-	bts := []byte{0x79}
-	gen := new(Payload)
-	gen.Unmarshal(bts)
-	if !bytes.Equal(gen.Payload, []byte{0x79}) {
-		t.Error("Bad unmarshaling")
+	bts := []byte{0xD1, 0x01, 0x0E, 'U', 0x01, 'n', 'f', 'c', '-', 'f', 'o', 'r', 'u', 'm', '.', 'o', 'r', 'g'}
+	sp := new(SmartPosterPayload)
+	sp.Unmarshal(bts)
+	if sp.Message.String() != "urn:nfc:wkt:U:http://www.nfc-forum.org" {
+		t.Error("Bad unmarshaling: ", sp.Message.String())
 	}
 }
 
 func TestLen(t *testing.T) {
-	gen := New([]byte{1, 2, 3})
-	if gen.Len() != 3 {
-		t.Error("Unexpected length")
+	msg := NewURIMessage("http://www.nfc-forum.org")
+	sp := NewSmartPosterPayload(msg)
+	if l := sp.Len(); l != 18 {
+		t.Error("Unexpected length: ", l)
 	}
 }

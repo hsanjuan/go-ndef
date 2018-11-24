@@ -1,5 +1,5 @@
 /***
-    Copyright (c) 2016, Hector Sanjuan
+    Copyright (c) 2018, Hector Sanjuan
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -21,15 +21,30 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+
+	"github.com/hsanjuan/go-ndef/types/wkt/uri"
 )
 
 func ExampleMessage() {
-	// Here we create a Message of type "U" (URI).
-	// Note that the first byte of the payload is dedicated to encode the
-	// URI Protocol
-	ndefMessage := NewMessage(NFCForumWellKnownType, "U", "", []byte("\x04github.com/hsanjuan/go-ndef"))
+	// Here we create an NDEF Message of type "U" (URI).
+	payload := uri.New("https://github.com/hsanjuan/go-ndef")
+	ndefMessage := NewMessage(NFCForumWellKnownType, "U", "", payload)
 	fmt.Println(ndefMessage)
 	// Output:
+	// urn:nfc:wkt:U:https://github.com/hsanjuan/go-ndef
+}
+
+func ExampleSmartPoster() {
+	// Here we create a SmartPoster Message with a title and a URL.
+	// A SmartPoster wraps an NDEF Message with several records.
+	title := NewTextRecord("The title", "en")
+	url := NewURIRecord("https://github.com/hsanjuan/go-ndef")
+	posterPayload := NewMessageFromRecords(title, url)
+	poster := NewSmartPosterMessage(posterPayload)
+	fmt.Println(poster)
+	// Output:
+	// urn:nfc:wkt:Sp:
+	// urn:nfc:wkt:T:The title
 	// urn:nfc:wkt:U:https://github.com/hsanjuan/go-ndef
 }
 
@@ -70,6 +85,9 @@ func TestTypes(t *testing.T) {
 
 	ndefMessage = NewExternalMessage("exttype", []byte("payload"))
 	t.Log(ndefMessage)
+
+	ndefMessage2 := NewSmartPosterMessage(ndefMessage)
+	t.Log(ndefMessage2)
 }
 
 func TestMarhsal(t *testing.T) {

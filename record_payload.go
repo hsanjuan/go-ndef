@@ -1,5 +1,5 @@
 /***
-    Copyright (c) 2016, Hector Sanjuan
+    Copyright (c) 2018, Hector Sanjuan
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -52,6 +52,8 @@ func makeRecordPayload(tnf byte, rtype string, payload []byte) RecordPayload {
 			r = new(uri.Payload)
 		case "T":
 			r = new(text.Payload)
+		case "Sp":
+			r = new(SmartPosterPayload)
 		default:
 			r = new(generic.Payload)
 		}

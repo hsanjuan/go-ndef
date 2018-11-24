@@ -1,5 +1,5 @@
 /***
-    Copyright (c) 2016, Hector Sanjuan
+    Copyright (c) 2018, Hector Sanjuan
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,7 @@ package ndef
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -32,23 +33,39 @@ type Message struct {
 	Records []*Record
 }
 
-// NewMessage returns a pointer to a Message initialized with a single Record
+// NewMessage returns a new Message initialized with a single Record
 // with the TNF, Type, ID and Payload values.
-//
-// New does not check if the provided information is aligned with the specs.
-func NewMessage(tnf byte, rtype string, id string, payload []byte) *Message {
-	r := &Record{
-		TNF:     tnf,
-		Type:    rtype,
-		ID:      id,
-		Payload: makeRecordPayload(tnf, rtype, payload),
-	}
+func NewMessage(tnf byte, rtype string, id string, payload RecordPayload) *Message {
 	return &Message{
-		[]*Record{r},
+		Records: []*Record{NewRecord(tnf, rtype, id, payload)},
 	}
 }
 
-// NewTextMessage returns a pointer to a Message with a single Record
+// NewMessageFromRecords returns a new Message containing several NDEF
+// Records. The MB and ME flags for the records are adjusted to
+// create a valid message.
+func NewMessageFromRecords(records ...*Record) *Message {
+	n := len(records)
+	if n == 0 {
+		return &Message{}
+	}
+
+	last := n - 1
+
+	for _, r := range records {
+		r.SetMB(false)
+		r.SetME(false)
+	}
+
+	records[0].SetMB(true)
+	records[last].SetME(true)
+
+	return &Message{
+		Records: records,
+	}
+}
+
+// NewTextMessage returns a new Message with a single Record
 // of WellKnownType T[ext].
 func NewTextMessage(textVal, language string) *Message {
 	return &Message{
@@ -56,7 +73,7 @@ func NewTextMessage(textVal, language string) *Message {
 	}
 }
 
-// NewURIMessage returns a pointer to a Message with a single Record
+// NewURIMessage returns a new Message with a single Record
 // of WellKnownType U[RI].
 func NewURIMessage(uriVal string) *Message {
 	return &Message{
@@ -64,7 +81,15 @@ func NewURIMessage(uriVal string) *Message {
 	}
 }
 
-// NewMediaMessage returns a pointer to a Message with a single Record
+// NewSmartPosterMessage returns a new Message with a single Record
+// of WellKnownType Sp (Smart Poster).
+func NewSmartPosterMessage(msgPayload *Message) *Message {
+	return &Message{
+		[]*Record{NewSmartPosterRecord(msgPayload)},
+	}
+}
+
+// NewMediaMessage returns a new Message with a single Record
 // of Media (RFC-2046) type.
 //
 // mimeType is something like "text/json" or "image/jpeg".
@@ -74,7 +99,7 @@ func NewMediaMessage(mimeType string, payload []byte) *Message {
 	}
 }
 
-// NewAbsoluteURIMessage returns a pointer to a Message with a single Record
+// NewAbsoluteURIMessage returns a new Message with a single Record
 // of AbsoluteURI type.
 //
 // AbsoluteURI means that the type of the payload for this record is
@@ -86,17 +111,12 @@ func NewAbsoluteURIMessage(typeURI string, payload []byte) *Message {
 	}
 }
 
-// NewExternalMessage returns a pointer to a Message with a single Record
+// NewExternalMessage returns a new Message with a single Record
 // of NFC Forum External type.
 func NewExternalMessage(extType string, payload []byte) *Message {
 	return &Message{
 		[]*Record{NewExternalRecord(extType, payload)},
 	}
-}
-
-// Reset clears the fields of a Message and puts them to their default values.
-func (m *Message) Reset() {
-	m.Records = []*Record{}
 }
 
 // Returns the string representation of each of the records in the message.
@@ -112,7 +132,7 @@ func (m *Message) String() string {
 	return str
 }
 
-// Returns a string with information about the message and its records.
+// Inspect returns a string with information about the message and its records.
 func (m *Message) Inspect() string {
 	str := fmt.Sprintf("NDEF Message with %d records.", len(m.Records))
 	if len(m.Records) > 0 {
@@ -135,7 +155,7 @@ func (m *Message) Inspect() string {
 // Returns the number of bytes processed (message length), or an error
 // if something looks wrong with the message or its records.
 func (m *Message) Unmarshal(buf []byte) (rLen int, err error) {
-	m.Reset()
+	m.Records = []*Record{}
 	rLen = 0
 	for rLen < len(buf) {
 		r := new(Record)
@@ -145,6 +165,9 @@ func (m *Message) Unmarshal(buf []byte) (rLen int, err error) {
 			return rLen, err
 		}
 		m.Records = append(m.Records, r)
+		if r.ME() { // last record in message
+			break
+		}
 	}
 
 	err = m.check()
@@ -167,11 +190,46 @@ func (m *Message) Marshal() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		buffer.Write(rBytes)
+		_, err = buffer.Write(rBytes)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return buffer.Bytes(), nil
 }
 
 func (m *Message) check() error {
+	last := len(m.Records) - 1
+
+	if last < 0 {
+		return errors.New(eNORECORDS)
+	}
+
+	if !m.Records[0].MB() {
+		return errors.New(eNOMB)
+	}
+
+	if !m.Records[last].ME() {
+		return errors.New(eNOME)
+	}
+
+	for i, r := range m.Records {
+		if i > 0 && r.MB() {
+			return errors.New(eBADMB)
+		}
+		if i < last && r.ME() {
+			return errors.New(eBADME)
+		}
+	}
+
 	return nil
 }
+
+// Check errors
+const (
+	eNORECORDS = "NDEF Message Check: No records"
+	eNOMB      = "NDEF Message Check: first record has not the MessageBegin flag set"
+	eNOME      = "NDEF Message Check: last record has not the MessageEnd flag set"
+	eBADMB     = "NDEF Message Check: middle record has the MessageBegin flag set"
+	eBADME     = "NDEF Message Check: middle record has the MessageEnd flag set"
+)

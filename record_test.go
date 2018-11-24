@@ -1,5 +1,5 @@
 /***
-    Copyright (c) 2016, Hector Sanjuan
+    Copyright (c) 2018, Hector Sanjuan
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -26,14 +26,12 @@ import (
 
 func TestRecordMarshalUnmarshal(t *testing.T) {
 	t.Log("Testing a Record created with a provided chunk")
-	r := &Record{
-		TNF:  NFCForumExternalType,
-		Type: "test",
-		ID:   "#ab",
-		Payload: &generic.Payload{
-			Payload: []byte("abc"),
-		},
-	}
+	r := NewRecord(
+		NFCForumExternalType,
+		"test",
+		"#ab",
+		&generic.Payload{[]byte("abc")},
+	)
 
 	rBytes, err := r.Marshal()
 	if err != nil {
@@ -57,6 +55,22 @@ func TestRecordMarshalUnmarshal(t *testing.T) {
 
 func TestRecordString(t *testing.T) {
 	// Just test we are not crashing
+	type args struct {
+		TNF     byte
+		Type    string
+		ID      string
+		Payload RecordPayload
+	}
+
+	tcs := []args{
+		args{NFCForumWellKnownType, "X", "#ab", &generic.Payload{[]byte("abc")}},
+		args{Empty, "", "", nil},
+		args{MediaType, "image/jpeg", "", &generic.Payload{[]byte("\x03abc")}},
+		args{AbsoluteURI, "http://resource", "#ab", &generic.Payload{[]byte("")}},
+		args{NFCForumExternalType, "T", "#ab", &generic.Payload{[]byte("abc")}},
+		args{Unknown, "", "", &generic.Payload{[]byte("abc")}},
+		args{Unchanged, "", "", &generic.Payload{[]byte("abc")}},
+	}
 
 	m := NewTextRecord("abc", "en")
 	t.Log(m)
@@ -64,73 +78,16 @@ func TestRecordString(t *testing.T) {
 	m = NewURIRecord("http://abc")
 	t.Log(m)
 
-	m = &Record{
-		TNF:  NFCForumWellKnownType,
-		ID:   "#ab",
-		Type: "X",
-		Payload: &generic.Payload{
-			Payload: []byte("abc"),
-		},
+	for _, tc := range tcs {
+		r := NewRecord(tc.TNF, tc.Type, tc.ID, tc.Payload)
+		t.Log(r)
 	}
-	t.Log(m)
-
-	m = &Record{
-		TNF: Empty,
-	}
-	t.Log(m)
-
-	m = &Record{
-		TNF:  MediaType,
-		Type: "image/jpeg",
-		Payload: &generic.Payload{
-			Payload: []byte("\x03abc"),
-		},
-	}
-	t.Log(m)
-
-	m = &Record{
-		TNF:  AbsoluteURI,
-		ID:   "#ab",
-		Type: "http://resource",
-		Payload: &generic.Payload{
-			Payload: []byte(""),
-		},
-	}
-	t.Log(m)
-
-	m = &Record{
-		TNF:  NFCForumExternalType,
-		ID:   "#ab",
-		Type: "T",
-		Payload: &generic.Payload{
-			Payload: []byte("abc"),
-		},
-	}
-	t.Log(m)
-
-	m = &Record{
-		TNF: Unknown,
-		Payload: &generic.Payload{
-			Payload: []byte("abc"),
-		},
-	}
-	t.Log(m)
-
-	m = &Record{
-		TNF: Unchanged,
-		Payload: &generic.Payload{
-			Payload: []byte("abc"),
-		},
-	}
-	t.Log(m)
 }
 
 func TestRecordBadChunksTest(t *testing.T) {
 	cases := []struct{ Expected string }{
-		{eNORECORDS},
-		{eNOMB},
+		{eNOCHUNKS},
 		{eFIRSTCHUNKED},
-		{eNOME},
 		{eLASTCHUNKED},
 		{eCFMISSING},
 		{eBADIL},
@@ -139,40 +96,22 @@ func TestRecordBadChunksTest(t *testing.T) {
 	}
 
 	errs := []error{}
-	chunks := []*recordChunk{}
-	errs = append(errs, checkChunks(chunks))
-
-	// First record is not MB
-	chunks = []*recordChunk{
-		&recordChunk{
-			MB: false,
-			ME: true,
-			CF: true,
-		},
-	}
-	errs = append(errs, checkChunks(chunks))
+	r := &Record{}
+	r.chunks = []*recordChunk{}
+	errs = append(errs, r.check())
 
 	// First and only record is chuncked
-	chunks = []*recordChunk{
+	r.chunks = []*recordChunk{
 		&recordChunk{
 			MB: true,
 			ME: true,
 			CF: true,
 		},
 	}
-	errs = append(errs, checkChunks(chunks))
-
-	// Last record is not ME
-	chunks = []*recordChunk{
-		&recordChunk{
-			MB: true,
-			ME: false,
-		},
-	}
-	errs = append(errs, checkChunks(chunks))
+	errs = append(errs, r.check())
 
 	// Last record is Chunked
-	chunks = []*recordChunk{
+	r.chunks = []*recordChunk{
 		&recordChunk{
 			MB: true,
 			ME: false,
@@ -184,10 +123,10 @@ func TestRecordBadChunksTest(t *testing.T) {
 			CF: true,
 		},
 	}
-	errs = append(errs, checkChunks(chunks))
+	errs = append(errs, r.check())
 
 	// recordChunk missing CF
-	chunks = []*recordChunk{
+	r.chunks = []*recordChunk{
 		&recordChunk{
 			MB: true,
 			ME: false,
@@ -199,10 +138,10 @@ func TestRecordBadChunksTest(t *testing.T) {
 			CF: false,
 		},
 	}
-	errs = append(errs, checkChunks(chunks))
+	errs = append(errs, r.check())
 
 	// Non-first record with IL
-	chunks = []*recordChunk{
+	r.chunks = []*recordChunk{
 		&recordChunk{
 			MB:       true,
 			ME:       false,
@@ -220,10 +159,10 @@ func TestRecordBadChunksTest(t *testing.T) {
 			ID:       "a",
 		},
 	}
-	errs = append(errs, checkChunks(chunks))
+	errs = append(errs, r.check())
 
 	// Non-first record with TypeLength
-	chunks = []*recordChunk{
+	r.chunks = []*recordChunk{
 		&recordChunk{
 			MB:         true,
 			ME:         false,
@@ -239,10 +178,10 @@ func TestRecordBadChunksTest(t *testing.T) {
 			Type:       "U",
 		},
 	}
-	errs = append(errs, checkChunks(chunks))
+	errs = append(errs, r.check())
 
 	// Non-first record with BAD TNF
-	chunks = []*recordChunk{
+	r.chunks = []*recordChunk{
 		&recordChunk{
 			MB:         true,
 			ME:         false,
@@ -259,7 +198,7 @@ func TestRecordBadChunksTest(t *testing.T) {
 			TNF:        Unknown,
 		},
 	}
-	errs = append(errs, checkChunks(chunks))
+	errs = append(errs, r.check())
 
 	for i, err := range errs {
 		t.Logf("Expected: %s...", cases[i].Expected)
@@ -308,7 +247,8 @@ func TestNDEFGoodrecordChunkTest(t *testing.T) {
 			Payload:       []byte("d"),
 		},
 	}
-	err := checkChunks(chunks)
+	r := &Record{chunks: chunks}
+	err := r.check()
 	if err != nil {
 		t.Log("recordChunk was good but failed because:", err)
 		t.FailNow()
@@ -326,13 +266,17 @@ func TestNDEFGoodrecordChunkTest(t *testing.T) {
 		buf.Write(cBytes)
 	}
 
-	r := new(Record)
+	r = &Record{}
 	_, err = r.Unmarshal(buf.Bytes())
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
 	}
-	if r.Payload.String() != "abcd" {
+	pl, err := r.Payload()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pl.String() != "abcd" {
 		t.Error("Payload is not what we would expect!")
 	}
 }
